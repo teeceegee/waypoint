@@ -230,7 +230,7 @@ export default function App() {
                 <Calendar className="w-12 h-12 text-slate-600 mb-3" />
                 <h3 className="font-bold text-slate-300">No Trips Scheduled</h3>
                 <p className="text-xs text-slate-500 mt-1.5 max-w-[280px]">
-                  No active travel campaigns. Import an LLM sync JSON file using the Database icon in the toolbar.
+                  No active travel campaigns. Import an update JSON file using the Database icon in the toolbar.
                 </p>
               </div>
             ) : (
