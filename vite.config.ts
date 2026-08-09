@@ -10,6 +10,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: 'inline',
       includeAssets: ['favicon.png', 'apple-touch-icon.png', 'icon.png'],
       manifest: {
         name: 'Waypoint Travel Planner',
