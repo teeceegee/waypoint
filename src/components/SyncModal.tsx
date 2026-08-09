@@ -367,6 +367,31 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
     }
   };
 
+  // Wipe all local database tables (Factory Reset)
+  const handleClearAllData = async () => {
+    if (window.confirm("WARNING: This will permanently delete all trips, boarding passes, and ticket files from this device. This cannot be undone. Are you sure?")) {
+      setLoading(true);
+      setStatus("Wiping local database...");
+      try {
+        await db.transaction('rw', [db.trips, db.passes, db.attachments], async () => {
+          await db.trips.clear();
+          await db.passes.clear();
+          await db.attachments.clear();
+        });
+        setStatus("All data successfully cleared! Reloading page...");
+        alert("All local data has been deleted. The application will now reload.");
+        onImportComplete();
+        onClose();
+      } catch (err: any) {
+        console.error("Clear failed:", err);
+        setStatus(`Clear failed: ${err.message}`);
+        alert(`Clear failed: ${err.message}`);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
       <div className="absolute inset-0" onClick={onClose} />
@@ -507,6 +532,23 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
                 Restore JSON Data
               </button>
             </div>
+          </div>
+
+          <hr className="border-white/5" />
+
+          {/* Wipe Local Data */}
+          <div className="space-y-3 pb-2">
+            <h4 className="text-xs uppercase font-extrabold tracking-wider text-red-400 font-mono">Danger Zone</h4>
+            <p className="text-xs text-slate-400 leading-normal">
+              Delete all cached trips, passes, and attached documents from this device to start fresh.
+            </p>
+            <button
+              onClick={handleClearAllData}
+              disabled={loading}
+              className="w-full py-3 bg-red-950/30 hover:bg-red-900/20 text-red-400 border border-red-500/20 rounded-xl text-xs font-bold transition disabled:opacity-50"
+            >
+              Wipe All Local Data
+            </button>
           </div>
 
         </div>
