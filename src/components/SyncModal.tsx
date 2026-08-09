@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { db, type Attachment } from '../db';
+import { db, type Attachment, type Trip, type Pass } from '../db';
 import { X, Download, Upload, Clipboard, Check, RefreshCw } from 'lucide-react';
 
 interface SyncModalProps {
@@ -59,7 +59,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
 
       const exportBundle = {
         app: 'waypoint',
-        version: 1,
+        version: 2,
         exportedAt: new Date().toISOString(),
         data: {
           trips,
@@ -71,7 +71,6 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
 
       const jsonStr = JSON.stringify(exportBundle, null, 2);
       
-      // Download as file
       const blob = new Blob([jsonStr], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -111,7 +110,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
 
       const bundle = {
         app: 'waypoint',
-        version: 1,
+        version: 2,
         exportedAt: new Date().toISOString(),
         data: { trips, passes, profiles, attachments },
       };
@@ -128,7 +127,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
     }
   };
 
-  // Import JSON backup data
+  // Import full JSON backup data (Restore)
   const handleImport = async (jsonString: string) => {
     if (!jsonString.trim()) {
       alert('Please paste a backup JSON string or upload a file.');
@@ -140,7 +139,6 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
     try {
       const bundle = JSON.parse(jsonString);
       
-      // Basic validation
       if (bundle.app !== 'waypoint' || !bundle.data) {
         throw new Error('Invalid file format. This is not a Waypoint backup.');
       }
@@ -153,7 +151,6 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
 
       await db.transaction('rw', [db.trips, db.passes, db.profiles, db.attachments], async () => {
         setStatus('Clearing current local database...');
-        // Clear current tables to avoid conflicts
         await db.trips.clear();
         await db.passes.clear();
         await db.profiles.clear();
@@ -179,7 +176,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
       });
 
       setStatus('Import completed successfully!');
-      alert('Data imported successfully! The page will now reload.');
+      alert('Backup restored successfully! The page will now reload.');
       onImportComplete();
       onClose();
     } catch (err: any) {
@@ -190,7 +187,144 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
     }
   };
 
-  // Handle uploaded JSON file
+  // Import Incremental LLM Updates JSON file
+  const handleLLMImport = async (jsonString: string) => {
+    setLoading(true);
+    setStatus('Parsing LLM sync data...');
+    try {
+      const payload = JSON.parse(jsonString);
+      const payloadTrips = payload.trips || [];
+      const payloadPasses = payload.passes || [];
+
+      if (!payload.trips && !payload.passes) {
+        throw new Error('Invalid LLM payload format. Missing "trips" or "passes" arrays.');
+      }
+
+      let tripsUpserted = 0;
+      let tripsDeleted = 0;
+      let passesUpserted = 0;
+      let passesDeleted = 0;
+
+      await db.transaction('rw', [db.trips, db.passes, db.attachments], async () => {
+        // 1. Process Trip Syncs
+        for (const trip of payloadTrips) {
+          if (!trip.slug) {
+            console.warn('Skipping trip without required slug field:', trip);
+            continue;
+          }
+
+          const existingTrip = await db.trips.where('slug').equals(trip.slug).first();
+
+          if (trip.action === 'delete') {
+            if (existingTrip) {
+              // Delete the trip record
+              await db.trips.delete(existingTrip.id!);
+              // Delete all passes and files associated with this trip's slug
+              const passesToDelete = await db.passes.where('tripSlug').equals(trip.slug).toArray();
+              for (const p of passesToDelete) {
+                if (p.attachmentId) await db.attachments.delete(p.attachmentId);
+                await db.passes.delete(p.id!);
+              }
+              tripsDeleted++;
+            }
+          } else {
+            // upsert mode
+            if (existingTrip) {
+              const { action, ...updateData } = trip;
+              const mergedTrip = { ...existingTrip, ...updateData };
+              await db.trips.put(mergedTrip);
+              tripsUpserted++;
+            } else {
+              const { action, ...newData } = trip;
+              // Validate critical creation fields
+              if (!newData.name || !newData.destination || !newData.startDate || !newData.endDate) {
+                throw new Error(`Cannot add new trip with slug '${trip.slug}': Missing name, destination, startDate, or endDate.`);
+              }
+              await db.trips.add(newData as Trip);
+              tripsUpserted++;
+            }
+          }
+        }
+
+        // 2. Process Pass Syncs
+        for (const pass of payloadPasses) {
+          if (!pass.slug) {
+            console.warn('Skipping pass without required slug field:', pass);
+            continue;
+          }
+
+          const existingPass = await db.passes.where('slug').equals(pass.slug).first();
+
+          if (pass.action === 'delete') {
+            if (existingPass) {
+              if (existingPass.attachmentId) {
+                await db.attachments.delete(existingPass.attachmentId);
+              }
+              await db.passes.delete(existingPass.id!);
+              passesDeleted++;
+            }
+          } else {
+            // upsert mode
+            // Resolve tripId based on tripSlug
+            let resolvedTripId: number | undefined = undefined;
+            if (pass.tripSlug) {
+              const matchedTrip = await db.trips.where('slug').equals(pass.tripSlug).first();
+              if (matchedTrip) {
+                resolvedTripId = matchedTrip.id;
+              } else {
+                throw new Error(`Cannot associate pass with slug '${pass.slug}': Trip with slug '${pass.tripSlug}' not found.`);
+              }
+            }
+
+            if (existingPass) {
+              const { action, ...updateData } = pass;
+              const mergedPass = { ...existingPass, ...updateData };
+              if (resolvedTripId !== undefined) {
+                mergedPass.tripId = resolvedTripId;
+              }
+              await db.passes.put(mergedPass);
+              passesUpserted++;
+            } else {
+              const { action, ...newData } = pass;
+              // Validate critical creation fields
+              if (!newData.title || !newData.type || !newData.travelerId || !newData.date || !newData.location || !newData.barcodeType) {
+                throw new Error(`Cannot add new pass with slug '${pass.slug}': Missing title, type, travelerId, date, location, or barcodeType.`);
+              }
+              if (!newData.tripSlug) {
+                throw new Error(`Cannot add new pass with slug '${pass.slug}': Missing tripSlug mapping.`);
+              }
+              
+              const matchedTrip = await db.trips.where('slug').equals(newData.tripSlug).first();
+              if (!matchedTrip) {
+                throw new Error(`Cannot add new pass with slug '${pass.slug}': Target tripSlug '${newData.tripSlug}' not found.`);
+              }
+
+              const passToAdd: Pass = {
+                ...(newData as Pass),
+                tripId: matchedTrip.id
+              };
+              await db.passes.add(passToAdd);
+              passesUpserted++;
+            }
+          }
+        }
+      });
+
+      const message = `Sync succeeded! Applied: Trips (Upserted: ${tripsUpserted}, Deleted: ${tripsDeleted}), Passes (Upserted: ${passesUpserted}, Deleted: ${passesDeleted}).`;
+      setStatus(message);
+      alert(message);
+      onImportComplete();
+      onClose();
+    } catch (err: any) {
+      console.error('LLM Sync failed:', err);
+      setStatus(`Sync failed: ${err.message}`);
+      alert(`Sync failed: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle uploaded JSON backup file
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -200,8 +334,19 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
           handleImport(event.target.result as string);
         }
       };
-      reader.onerror = () => {
-        setStatus('Error reading uploaded file.');
+      reader.readAsText(file);
+    }
+  };
+
+  // Handle uploaded LLM JSON update file
+  const handleLLMFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          handleLLMImport(event.target.result as string);
+        }
       };
       reader.readAsText(file);
     }
@@ -216,7 +361,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-white/5 bg-slate-950/40">
           <div>
-            <h3 className="text-lg font-bold text-slate-100">Backup & Sync Data</h3>
+            <h3 className="text-lg font-bold text-slate-100">Backup & LLM Sync</h3>
             <p className="text-[10px] text-slate-500 font-mono mt-0.5">Local-first Data Portability</p>
           </div>
           <button
@@ -237,6 +382,32 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
               {status}
             </div>
           )}
+
+          {/* Incremental LLM JSON Import Section */}
+          <div className="space-y-4">
+            <h4 className="text-xs uppercase font-extrabold tracking-wider text-slate-400 font-mono text-violet-400">Import LLM Updates</h4>
+            <p className="text-xs text-slate-400 leading-normal">
+              Upload a `.json` file generated by an LLM containing incremental changes. The engine will match slugs to create, modify, or delete trips and passes.
+            </p>
+
+            {/* File Upload Selector */}
+            <div className="relative">
+              <input
+                type="file"
+                accept=".json"
+                disabled={loading}
+                onChange={handleLLMFileUpload}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              />
+              <div className="border border-dashed border-violet-500/20 hover:border-violet-500/50 rounded-xl p-5 text-center flex flex-col items-center justify-center bg-slate-950/20 hover:bg-violet-600/5 transition">
+                <Upload className="w-6 h-6 text-violet-400 mb-2" />
+                <p className="text-xs font-semibold text-slate-300">Upload LLM Update JSON File</p>
+                <p className="text-[10px] text-slate-500 mt-1">Accepts incremental upserts/deletes</p>
+              </div>
+            </div>
+          </div>
+
+          <hr className="border-white/5" />
 
           {/* Export Actions */}
           <div className="space-y-3">

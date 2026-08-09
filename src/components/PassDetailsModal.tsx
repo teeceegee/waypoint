@@ -1,20 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { type Pass, db, type Attachment } from '../db';
 import { BarcodeRenderer } from './BarcodeRenderer';
-import { X, Edit2, Trash2, Maximize2, ShieldAlert, FileText, Download, Eye } from 'lucide-react';
+import { X, Maximize2, ShieldAlert, FileText, Download, Eye } from 'lucide-react';
 
 interface PassDetailsModalProps {
   pass: Pass;
   onClose: () => void;
-  onEdit: () => void;
-  onDelete: (id: number) => void;
 }
 
 export const PassDetailsModal: React.FC<PassDetailsModalProps> = ({
   pass,
   onClose,
-  onEdit,
-  onDelete,
 }) => {
   const [attachment, setAttachment] = useState<Attachment | null>(null);
   const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
@@ -101,13 +97,6 @@ export const PassDetailsModal: React.FC<PassDetailsModalProps> = ({
     };
   }, [isGateMode]);
 
-  const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this boarding pass/ticket?')) {
-      if (pass.id) {
-        onDelete(pass.id);
-      }
-    }
-  };
 
   const getPassTypeName = () => {
     switch (pass.type) {
@@ -295,20 +284,6 @@ export const PassDetailsModal: React.FC<PassDetailsModalProps> = ({
             </div>
             
             <div className="flex items-center gap-2">
-              <button
-                onClick={onEdit}
-                className={`p-2 rounded-xl transition ${modalStyle.btnClass}`}
-                title="Edit Pass"
-              >
-                <Edit2 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={handleDelete}
-                className={`p-2 rounded-xl transition ${modalStyle.deleteBtnClass}`}
-                title="Delete Pass"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
               <button
                 onClick={onClose}
                 className={`p-2 rounded-xl transition ${modalStyle.btnClass}`}

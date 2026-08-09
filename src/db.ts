@@ -4,6 +4,7 @@ import Dexie, { type Table } from 'dexie';
 
 export interface Trip {
   id?: number;
+  slug: string; // Unique human-readable LLM ID
   name: string;
   destination: string;
   startDate: string;
@@ -14,7 +15,9 @@ export interface Trip {
 
 export interface Pass {
   id?: number;
-  tripId: number;
+  slug: string; // Unique human-readable LLM ID
+  tripSlug: string; // Links to Trip.slug
+  tripId?: number; // Resolved internally by IndexedDB
   title: string;
   type: 'flight' | 'train' | 'bus' | 'hotel' | 'restaurant' | 'activity' | 'other';
   travelerId: 'graeme' | 'tony' | 'shared';
@@ -54,10 +57,11 @@ class WaypointDatabase extends Dexie {
   constructor() {
     super('WaypointDatabase');
     
-    // Define database schemas with indexable fields
-    this.version(1).stores({
-      trips: '++id, name, destination, startDate, endDate, travelerId',
-      passes: '++id, tripId, title, type, travelerId, date, attachmentId',
+    // Define database schemas.
+    // Version 2 adds unique string slug index support to allow LLM JSON operations.
+    this.version(2).stores({
+      trips: '++id, &slug, name, destination, travelerId',
+      passes: '++id, &slug, tripSlug, tripId, type, travelerId, date, attachmentId',
       attachments: '++id, fileName, fileType',
       profiles: 'id, name, isDeviceOwner'
     });
@@ -84,6 +88,7 @@ export async function seedDatabase() {
 
   // 2. Seed Trips
   const trip1Id = await db.trips.add({
+    slug: 'trip-tokyo-2026',
     name: 'Summer Voyage to Tokyo',
     destination: 'Tokyo, Japan',
     startDate: new Date(Date.now() + 86400000).toISOString().split('T')[0], // Starts tomorrow
@@ -93,6 +98,7 @@ export async function seedDatabase() {
   });
 
   const trip2Id = await db.trips.add({
+    slug: 'trip-rome-2026',
     name: 'Weekend Getaway in Rome',
     destination: 'Rome, Italy',
     startDate: new Date(Date.now() + 86400000 * 30).toISOString().split('T')[0], // In 1 month
@@ -114,8 +120,10 @@ export async function seedDatabase() {
 
   // 3. Seed Passes for Trip 1 (Tokyo)
   await db.passes.bulkAdd([
-    // Flight for Me
+    // Flight for Tony
     {
+      slug: 'pass-tokyo-flight-tony',
+      tripSlug: 'trip-tokyo-2026',
       tripId: trip1Id,
       title: 'Flight JL042: LHR ➔ HND (Tony)',
       type: 'flight',
@@ -132,6 +140,8 @@ export async function seedDatabase() {
     },
     // Flight for Graeme
     {
+      slug: 'pass-tokyo-flight-graeme',
+      tripSlug: 'trip-tokyo-2026',
       tripId: trip1Id,
       title: 'Flight JL042: LHR ➔ HND (Graeme)',
       type: 'flight',
@@ -148,6 +158,8 @@ export async function seedDatabase() {
     },
     // Shared Hotel Reservation
     {
+      slug: 'pass-tokyo-hotel-shared',
+      tripSlug: 'trip-tokyo-2026',
       tripId: trip1Id,
       title: 'Shibuya Stream Excel Hotel',
       type: 'hotel',
@@ -163,6 +175,8 @@ export async function seedDatabase() {
     },
     // Shared Shinkansen Ticket
     {
+      slug: 'pass-tokyo-shinkansen-shared',
+      tripSlug: 'trip-tokyo-2026',
       tripId: trip1Id,
       title: 'Shinkansen: Tokyo ➔ Kyoto',
       type: 'train',
@@ -178,6 +192,8 @@ export async function seedDatabase() {
     },
     // DisneySea activity (Graeme)
     {
+      slug: 'pass-tokyo-disney-graeme',
+      tripSlug: 'trip-tokyo-2026',
       tripId: trip1Id,
       title: 'Tokyo DisneySea Ticket (Graeme)',
       type: 'activity',
@@ -190,8 +206,10 @@ export async function seedDatabase() {
       barcodeContent: 'DISNEY-SEA-QR-ENTRY-GRAEME-9921827419',
       notes: 'Scan at the turnstiles for entry. Gates open at 8:30 AM.'
     },
-    // DisneySea activity (Me)
+    // DisneySea activity (Tony)
     {
+      slug: 'pass-tokyo-disney-tony',
+      tripSlug: 'trip-tokyo-2026',
       tripId: trip1Id,
       title: 'Tokyo DisneySea Ticket (Tony)',
       type: 'activity',
@@ -206,6 +224,8 @@ export async function seedDatabase() {
     },
     // Restaurant Reservation (Shared)
     {
+      slug: 'pass-tokyo-restaurant-shared',
+      tripSlug: 'trip-tokyo-2026',
       tripId: trip1Id,
       title: 'Dinner at Sushi Yoshitake',
       type: 'restaurant',
@@ -223,6 +243,8 @@ export async function seedDatabase() {
   // 4. Seed Passes for Trip 2 (Rome)
   await db.passes.bulkAdd([
     {
+      slug: 'pass-rome-flight-tony',
+      tripSlug: 'trip-rome-2026',
       tripId: trip2Id,
       title: 'Flight AZ203: LHR ➔ FCO',
       type: 'flight',
