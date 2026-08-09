@@ -5,6 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/waypoint/',
   plugins: [
     react(),
     tailwindcss(),
@@ -20,6 +21,8 @@ export default defineConfig({
         background_color: '#0f172a',
         display: 'standalone',
         orientation: 'portrait',
+        start_url: '/waypoint/',
+        scope: '/waypoint/',
         icons: [
           {
             src: 'icon.png',
