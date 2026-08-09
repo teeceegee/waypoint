@@ -187,17 +187,16 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
     }
   };
 
-  // Import Incremental LLM Updates JSON file
   const handleLLMImport = async (jsonString: string) => {
     setLoading(true);
-    setStatus('Parsing LLM sync data...');
+    setStatus('Parsing sync updates...');
     try {
       const payload = JSON.parse(jsonString);
-      const payloadTrips = payload.trips || [];
-      const payloadPasses = payload.passes || [];
+      const payloadTrips = (payload.trips || []) as any[];
+      const payloadPasses = (payload.passes || []) as any[];
 
       if (!payload.trips && !payload.passes) {
-        throw new Error('Invalid LLM payload format. Missing "trips" or "passes" arrays.');
+        throw new Error('Invalid update payload format. Missing "trips" or "passes" arrays.');
       }
 
       let tripsUpserted = 0;
@@ -217,9 +216,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
 
           if (trip.action === 'delete') {
             if (existingTrip) {
-              // Delete the trip record
               await db.trips.delete(existingTrip.id!);
-              // Delete all passes and files associated with this trip's slug
               const passesToDelete = await db.passes.where('tripSlug').equals(trip.slug).toArray();
               for (const p of passesToDelete) {
                 if (p.attachmentId) await db.attachments.delete(p.attachmentId);
@@ -228,7 +225,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
               tripsDeleted++;
             }
           } else {
-            // upsert mode
+            // upsert
             if (existingTrip) {
               const { action, ...updateData } = trip;
               const mergedTrip = { ...existingTrip, ...updateData };
@@ -236,7 +233,6 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
               tripsUpserted++;
             } else {
               const { action, ...newData } = trip;
-              // Validate critical creation fields
               if (!newData.name || !newData.destination || !newData.startDate || !newData.endDate) {
                 throw new Error(`Cannot add new trip with slug '${trip.slug}': Missing name, destination, startDate, or endDate.`);
               }
@@ -264,8 +260,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
               passesDeleted++;
             }
           } else {
-            // upsert mode
-            // Resolve tripId based on tripSlug
+            // upsert
             let resolvedTripId: number | undefined = undefined;
             if (pass.tripSlug) {
               const matchedTrip = await db.trips.where('slug').equals(pass.tripSlug).first();
@@ -276,24 +271,42 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
               }
             }
 
+            let attachmentId = existingPass?.attachmentId;
+            if (pass.attachment) {
+              if (attachmentId) {
+                await db.attachments.delete(attachmentId);
+              }
+              try {
+                attachmentId = await db.attachments.add({
+                  fileName: pass.attachment.fileName,
+                  fileType: pass.attachment.fileType,
+                  data: dataURLtoBlob(pass.attachment.dataUrl)
+                });
+              } catch (e: any) {
+                throw new Error(`Failed to import attachment for pass '${pass.slug}': ${e.message}`);
+              }
+            }
+
             if (existingPass) {
-              const { action, ...updateData } = pass;
+              const { action, attachment, ...updateData } = pass;
               const mergedPass = { ...existingPass, ...updateData };
               if (resolvedTripId !== undefined) {
                 mergedPass.tripId = resolvedTripId;
               }
+              if (attachmentId !== undefined) {
+                mergedPass.attachmentId = attachmentId;
+              }
               await db.passes.put(mergedPass);
               passesUpserted++;
             } else {
-              const { action, ...newData } = pass;
-              // Validate critical creation fields
+              const { action, attachment, ...newData } = pass;
               if (!newData.title || !newData.type || !newData.travelerId || !newData.date || !newData.location || !newData.barcodeType) {
                 throw new Error(`Cannot add new pass with slug '${pass.slug}': Missing title, type, travelerId, date, location, or barcodeType.`);
               }
               if (!newData.tripSlug) {
                 throw new Error(`Cannot add new pass with slug '${pass.slug}': Missing tripSlug mapping.`);
               }
-              
+
               const matchedTrip = await db.trips.where('slug').equals(newData.tripSlug).first();
               if (!matchedTrip) {
                 throw new Error(`Cannot add new pass with slug '${pass.slug}': Target tripSlug '${newData.tripSlug}' not found.`);
@@ -303,6 +316,9 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
                 ...(newData as Pass),
                 tripId: matchedTrip.id
               };
+              if (attachmentId !== undefined) {
+                passToAdd.attachmentId = attachmentId;
+              }
               await db.passes.add(passToAdd);
               passesUpserted++;
             }
@@ -316,14 +332,13 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
       onImportComplete();
       onClose();
     } catch (err: any) {
-      console.error('LLM Sync failed:', err);
+      console.error('Incremental Sync failed:', err);
       setStatus(`Sync failed: ${err.message}`);
       alert(`Sync failed: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
-
   // Handle uploaded JSON backup file
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {

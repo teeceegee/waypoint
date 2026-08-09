@@ -316,7 +316,7 @@ export const PassDetailsModal: React.FC<PassDetailsModalProps> = ({
               </div>
             ) : (
               <div className={`p-4 rounded-xl border border-dashed text-center text-xs ${modalStyle.labelText} border-white/10`}>
-                No digital barcode configured. Click Edit to add Aztec, PDF417, or QR barcode contents.
+                No digital barcode configured. Import an update JSON containing barcodeType and barcodeContent for this item.
               </div>
             )}
 
