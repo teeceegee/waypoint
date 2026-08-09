@@ -10,7 +10,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'icon.png'],
       manifest: {
         name: 'Waypoint Travel Planner',
         short_name: 'Waypoint',
@@ -21,15 +21,15 @@ export default defineConfig({
         orientation: 'portrait',
         icons: [
           {
-            src: 'favicon.svg',
-            sizes: '48x48 72x72 96x96 128x128 256x256 512x512',
-            type: 'image/svg+xml',
+            src: 'icon.png',
+            sizes: '512x512',
+            type: 'image/png',
             purpose: 'any'
           },
           {
-            src: 'favicon.svg',
+            src: 'icon.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'maskable'
           }
         ]
