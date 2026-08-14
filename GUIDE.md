@@ -83,6 +83,12 @@ If `travelerId` is omitted when a new trip or pass is created, Waypoint defaults
 
 For a group trip, normally label the trip itself `shared` and label only person-specific passes—such as seats, barcodes, or tickets—with the appropriate passenger ID. This ensures every selected traveller can open the common trip while seeing only their own personal passes plus shared passes.
 
+### Creating JSON with ChatGPT or another AI
+
+An AI can build the update file from connected email, pasted confirmation messages, or uploaded tickets and documents. Give it `llm_json_instructions.md`, ask it to list the evidence and uncertainties before generating JSON, and tell it never to guess missing booking or barcode data.
+
+For the full step-by-step workflow and copyable prompts, see **[Ask an AI to create the JSON file](./WAYPOINT_USER_GUIDE.md#ask-an-ai-to-create-the-json-file)** in the comprehensive user guide.
+
 ---
 
 ## 📤 Moving Data Between Devices

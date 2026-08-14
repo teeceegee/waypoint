@@ -13,6 +13,7 @@ Waypoint is an offline-first shared travel wallet. It keeps trips, flights, rail
 - [Use Waypoint](#use-waypoint)
 - [Understand the two kinds of JSON file](#understand-the-two-kinds-of-json-file)
 - [Load an incremental update](#load-an-incremental-update)
+- [Ask an AI to create the JSON file](#ask-an-ai-to-create-the-json-file)
 - [Incremental JSON structure](#incremental-json-structure)
 - [JSON examples](#json-examples)
 - [Back up and restore Waypoint](#back-up-and-restore-waypoint)
@@ -132,6 +133,96 @@ To load one:
 If the file contains only `shared` records, Waypoint has no passenger list to present and does not show the selection question.
 
 Waypoint processes trips before passes. A single file can therefore create a new trip and then add passes that refer to it.
+
+## Ask an AI to create the JSON file
+
+An AI assistant such as ChatGPT can collect booking details and turn them into a Waypoint incremental update. It can work from:
+
+- a connected email account;
+- confirmation emails or text pasted into the conversation;
+- uploaded PDFs, tickets, screenshots, calendar entries, or itinerary documents; and
+- an existing Waypoint JSON file that needs updating.
+
+ChatGPT cannot search an inbox unless the relevant email plugin is connected and permitted for the current account or workspace. If email access is unavailable, download or print the relevant messages and provide them as files instead. OpenAI's current email workflow guidance is available at [Get your email to inbox zero](https://learn.chatgpt.com/use-cases/manage-your-inbox).
+
+### Before asking the AI
+
+1. Decide which trip, dates, and inboxes should be searched.
+2. Connect the appropriate Gmail or Outlook Email plugin if it is available, or gather the emails and attachments yourself.
+3. Give the AI the [Waypoint JSON instructions](./llm_json_instructions.md), or provide this repository URL:
+   `https://github.com/teeceegee/waypoint/blob/main/llm_json_instructions.md`
+4. If this is an update to existing Waypoint data, also provide the previous incremental JSON or a current backup so the AI can preserve existing slugs.
+5. Decide how each passenger should be identified. Use one stable lowercase `travelerId` per person and no more than 12 passenger IDs.
+
+Booking confirmations, barcodes, and backups contain sensitive information. Use only an AI service and account you trust, provide no more information than necessary, and do not paste the resulting JSON into a public conversation or commit it to a public repository.
+
+### Use a two-stage request
+
+Ask the AI to review the evidence before it writes JSON. This makes missing or conflicting details easier to catch.
+
+Copy and adapt this first prompt:
+
+```text
+Help me prepare an incremental JSON update for the Waypoint travel wallet.
+
+Search my connected email and inspect the files I have provided for travel relating to:
+- destination or trip: [describe the trip]
+- date range: [start date to end date]
+- likely booking names, airlines, hotels, rail operators, or senders: [list any clues]
+
+Follow the Waypoint schema in llm_json_instructions.md.
+
+Do not create the JSON yet. First give me a concise evidence table containing:
+- each trip or booking you found;
+- the source email or document;
+- passenger name;
+- date and local time;
+- location, terminal, platform, gate, seat, and confirmation code when present;
+- whether an exact barcode type and barcode content were found; and
+- anything missing, uncertain, or contradictory.
+
+Never guess a booking detail, passenger, barcode value, date, or time. Ask me to resolve uncertainties before continuing.
+
+Derive one stable lowercase travelerId from each passenger name. Use shared for trip details and bookings that apply to everyone. Use passenger-specific travelerIds only for individual seats, tickets, barcodes, booking references, or documents. Support no more than 12 passengers.
+```
+
+Check the evidence table against the original messages and documents. Correct mistakes and answer the AI's questions before asking for the file.
+
+When the evidence is correct, use this follow-up prompt:
+
+```text
+Now create the final Waypoint incremental update.
+
+Return one valid JSON object containing trips and/or passes. Follow llm_json_instructions.md exactly.
+
+Requirements:
+- use action: upsert;
+- use stable, unique, lowercase slugs;
+- make a group trip shared;
+- assign each personal ticket or booking to the correct travelerId;
+- include every required field for a new record;
+- omit unknown optional values instead of guessing them;
+- use barcodeType: none when no exact barcode data was found;
+- include barcodeContent only when it was extracted exactly from the source;
+- do not abbreviate Base64 attachment data;
+- do not add explanations, comments, citations, Markdown fences, or fields outside the Waypoint schema.
+
+Check that the result is valid JSON before returning it. If you cannot satisfy a required field, stop and tell me what is missing instead of producing an invalid file.
+```
+
+### Check and save the result
+
+Before importing the AI-generated file:
+
+1. Confirm every passenger has the intended `travelerId` and that there are no more than 12.
+2. Confirm a group trip is `shared`, so every selected passenger can see it.
+3. Compare dates, local times, locations, seats, and confirmation codes with the original booking.
+4. Treat barcode data especially carefully. An AI must not reconstruct or guess barcode content from the visible appearance of a code.
+5. Confirm that every pass's `tripSlug` exactly matches a trip slug already in Waypoint or created in the same file.
+6. Copy only the JSON into a plain-text file and save it with a `.json` extension, for example `waypoint-update-paris-2026.json`. If the AI offers a downloadable file, confirm that its contents are plain JSON before using it.
+7. Import it through **Upload Update JSON File**, review Waypoint's import totals, choose one passenger, and inspect the resulting trip and passes.
+
+Large PDF or image attachments encoded as Base64 can make a conversation and JSON file very large. It is often safer to create and verify the trip and pass records first, then add attachments in a separate update. Keep the original tickets available even when a barcode or attachment has been imported successfully.
 
 ## Incremental JSON structure
 
