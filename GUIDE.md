@@ -35,18 +35,15 @@ Send the URL by message or email, then follow the same installation steps on the
 
 ## 🧭 Using Waypoint
 
-Waypoint opens directly in **All Trips**, with no device-owner setup.
+Waypoint supports groups of up to 12 travellers without predefined names or user accounts.
 
-1. Tap a trip card to open its chronological timeline.
-2. Tap a pass to view its details, barcode, and attached document.
-3. Use the selector in the header when you want a narrower view:
-   - **All Trips** shows the complete shared wallet.
-   - **Tony** shows shared items plus items labelled for Tony.
-   - **Graeme** shows shared items plus items labelled for Graeme.
-   - **Group** shows every pass in a swipeable chronological carousel.
-4. Tap the **Database icon** to import updates, export a backup, restore a backup, or wipe local data.
+1. Import an update or restore a backup using the **Database icon**.
+2. Waypoint reads the distinct `travelerId` values in that JSON file and asks you to choose one traveller.
+3. Tap a trip card to open that traveller's chronological timeline. Items labelled `shared` are included automatically.
+4. Tap a pass to view its details, barcode, and attached document.
+5. To show a different traveller, use the dynamically generated selector in the header.
 
-Traveller labels are optional. Use them only when seats, barcodes, confirmation details, or documents differ between travellers.
+The selected traveller is remembered on that device. Importing another JSON file asks again using the passenger IDs found in that file. If a file contains only shared data, no passenger question is needed.
 
 ---
 
@@ -71,6 +68,7 @@ All data is added via JSON update files. See **[llm_json_instructions.md](./llm_
 1. Tap the **Database icon** (top-right of the app header)
 2. Find **Import Incremental Updates**
 3. Tap **Upload Update JSON File** and select your `.json` file
+4. Choose one traveller from the passenger list Waypoint derives from the file
 
 The paste box under **Import Backup / Restore** is only for a complete exported backup. It does not accept an incremental update.
 
@@ -81,7 +79,9 @@ Each item in the JSON uses an `action` field:
 
 You only need to include fields that are changing — unchanged fields are preserved automatically.
 
-If `travelerId` is omitted when a new trip or pass is created, Waypoint defaults it to `shared`. Add `"travelerId": "tony"` or `"travelerId": "graeme"` only for an individual booking.
+If `travelerId` is omitted when a new trip or pass is created, Waypoint defaults it to `shared`. For an individual booking, use any stable passenger ID such as `"travelerId": "passenger-1"`. Waypoint supports up to 12 distinct passenger IDs and does not contain a predefined passenger list.
+
+For a group trip, normally label the trip itself `shared` and label only person-specific passes—such as seats, barcodes, or tickets—with the appropriate passenger ID. This ensures every selected traveller can open the common trip while seeing only their own personal passes plus shared passes.
 
 ---
 
@@ -97,6 +97,7 @@ If `travelerId` is omitted when a new trip or pass is created, Waypoint defaults
 2. Tap the **Database icon**
 3. Find **Import Backup / Restore**
 4. Tap **Upload Backup JSON File** and select the transferred file
+5. Choose one traveller from the passenger IDs restored from the backup
 
 > Restoring a full backup replaces all Waypoint data currently stored on that device. Export the destination device first if it contains anything you may need.
 
@@ -167,17 +168,13 @@ The repository is currently **public**, which is required for GitHub Pages to wo
 
 ---
 
-## 👤 Optional Traveller Labels
+## 👤 Dynamic Traveller IDs
 
-| ID | Name |
-|---|---|
-| `tony` | Tony |
-| `graeme` | Graeme |
-| `shared` | Shared wallet item (the default) |
+The `travelerId` field accepts any stable, non-empty string. Waypoint converts IDs to lowercase, derives the passenger list from the imported JSON, and supports up to 12 distinct passengers. For readability, use short IDs containing a name or another recognisable label, for example `passenger-1`.
 
-You do not need to identify the device owner. Waypoint opens in **All Trips** and stores one shared wallet on each device.
+The special ID `shared` is the default and does not represent a passenger. Shared trips and passes appear for whichever traveller is selected.
 
-The `travelerId` field is optional for new trips and passes and defaults to `shared`. Use `tony` or `graeme` only when an item genuinely belongs to one traveller. The header filters use these labels; they are not separate accounts and provide no access control.
+Traveller selection is a display filter, not an account, sign-in, or access-control mechanism. Anyone with access to the device and its local Waypoint data can switch to another passenger using the header selector.
 
 ---
 
@@ -198,11 +195,11 @@ The `travelerId` field is optional for new trips and passes and defaults to `sha
   "passes": [
     {
       "action": "upsert",
-      "slug": "pass-flight-cdg-tony",
+      "slug": "pass-flight-cdg-passenger-1",
       "tripSlug": "trip-mytrip-2026",
       "title": "Flight BA304: LHR ➔ CDG",
       "type": "flight",
-      "travelerId": "tony",
+      "travelerId": "passenger-1",
       "date": "2026-09-01",
       "time": "08:00",
       "location": "London Heathrow Terminal 5",

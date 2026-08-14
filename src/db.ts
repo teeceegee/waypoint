@@ -10,7 +10,7 @@ export interface Trip {
   startDate: string;
   endDate: string;
   description?: string;
-  travelerId: 'graeme' | 'tony' | 'shared';
+  travelerId: string;
 }
 
 export interface Pass {
@@ -20,7 +20,7 @@ export interface Pass {
   tripId?: number; // Resolved internally by IndexedDB
   title: string;
   type: 'flight' | 'train' | 'bus' | 'hotel' | 'restaurant' | 'activity' | 'other';
-  travelerId: 'graeme' | 'tony' | 'shared';
+  travelerId: string;
   date: string;
   time?: string;
   location: string;
@@ -41,7 +41,7 @@ export interface Attachment {
 }
 
 export interface Profile {
-  id: 'graeme' | 'tony';
+  id: string;
   name: string;
   isDeviceOwner: boolean;
 }

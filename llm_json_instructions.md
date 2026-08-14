@@ -9,7 +9,9 @@ Use this document to instruct any system, parser, or Large Language Model (LLM) 
 The update payload is a flat JSON object containing two optional arrays: `"trips"` and `"passes"`. 
 Each item in these arrays **must** specify an `action` (`"upsert"` or `"delete"`) and a stable string `slug` (used to uniquely identify the item).
 
-Waypoint is a shared wallet. New trips and passes default to `"shared"` when `travelerId` is omitted. Include `travelerId: "tony"` or `travelerId: "graeme"` only when a booking, seat, barcode, or document belongs to one traveller. Existing records keep their current traveller label when an incremental update omits the field.
+Waypoint derives its passenger list from the distinct `travelerId` values in each imported JSON file. Passenger IDs are not predefined. Use a stable lowercase identifier for each person and use the same ID consistently across files. Waypoint supports up to 12 distinct passenger IDs.
+
+New trips and passes default to `"shared"` when `travelerId` is omitted. The special `shared` value is not a passenger: it makes the item visible to every selected traveller. For group travel, trips should normally be shared while person-specific tickets, seats, barcodes, or documents should carry the appropriate passenger ID. Existing records keep their current traveller label when an incremental update omits the field.
 
 ### Attachment Support (New)
 You can attach documents (PDF boarding passes, reservation screenshots, etc.) directly by including an `"attachment"` object in any pass. 
@@ -26,17 +28,17 @@ The system will automatically decode the base64 data and store it offline in Ind
       "startDate": "YYYY-MM-DD (required for new)",
       "endDate": "YYYY-MM-DD (required for new)",
       "description": "string (optional)",
-      "travelerId": "tony" | "graeme" | "shared" (optional, defaults to "shared")
+      "travelerId": "string passenger ID or shared" (optional, defaults to "shared")
     }
   ],
   "passes": [
     {
       "action": "upsert" | "delete",
-      "slug": "string (unique ID, e.g., 'pass-jl042-tony')",
+      "slug": "string (unique ID, e.g., 'pass-jl042-passenger-1')",
       "tripSlug": "string (references Trip slug, required for new)",
       "title": "string (required for new)",
       "type": "flight" | "train" | "bus" | "hotel" | "restaurant" | "activity" | "other" (required for new),
-      "travelerId": "tony" | "graeme" | "shared" (optional, defaults to "shared"),
+      "travelerId": "string passenger ID or shared" (optional, defaults to "shared"),
       "date": "YYYY-MM-DD (required for new)",
       "time": "HH:MM (optional, 24h format)",
       "location": "string (required for new)",
@@ -78,14 +80,14 @@ If you are using an LLM or script to scan a traveler's Gmail inbox for barcodes 
 ## 💡 Examples
 
 ### Example 1: Gmail Scraper Adds Barcode & PDF (Incremental Update)
-If you found the barcode string and PDF attachment for an existing flight pass `pass-flight-cph-tony` (Reference `ZYLQQY`):
+If you found the barcode string and PDF attachment for an existing flight pass `pass-flight-cph-passenger-1` (Reference `ZYLQQY`):
 
 ```json
 {
   "passes": [
     {
       "action": "upsert",
-      "slug": "pass-flight-cph-tony",
+      "slug": "pass-flight-cph-passenger-1",
       "barcodeType": "pdf417",
       "barcodeContent": "M1ME/PASSENGER  EZYLQQY NCLCPHDY 83529 229Y012A0023 150>2180B  6229B3",
       "attachment": {
@@ -115,11 +117,11 @@ If you found the barcode string and PDF attachment for an existing flight pass `
   "passes": [
     {
       "action": "upsert",
-      "slug": "pass-flight-jl042-tony",
+      "slug": "pass-flight-jl042-passenger-1",
       "tripSlug": "trip-tokyo-2026",
-      "title": "Flight JL042: LHR ➔ HND (Tony)",
+      "title": "Flight JL042: LHR ➔ HND — Passenger 1",
       "type": "flight",
-      "travelerId": "tony",
+      "travelerId": "passenger-1",
       "date": "2026-08-10",
       "time": "09:40",
       "location": "London Heathrow (LHR) Terminal 3",
@@ -136,7 +138,7 @@ If you found the barcode string and PDF attachment for an existing flight pass `
   "passes": [
     {
       "action": "delete",
-      "slug": "pass-flight-jl042-tony"
+      "slug": "pass-flight-jl042-passenger-1"
     }
   ]
 }

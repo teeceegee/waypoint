@@ -1,45 +1,95 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Pass } from './db';
 import { PassDetailsModal } from './components/PassDetailsModal';
-import { GroupPassesCarousel } from './components/GroupPassesCarousel';
 import { TripSummaryCard } from './components/TripSummaryCard';
 import { VerticalTimeline } from './components/VerticalTimeline';
 import { SyncModal } from './components/SyncModal';
+import { TravelerSelectionModal } from './components/TravelerSelectionModal';
+import { formatTravelerId, getTravelerIds, SHARED_TRAVELER_ID } from './travelers';
 import { Database, Calendar, MapPin, ArrowLeft } from 'lucide-react';
 
-type ViewMode = 'all' | 'tony' | 'graeme' | 'group';
+const SELECTED_TRAVELER_STORAGE_KEY = 'waypoint:selectedTravelerId';
 
 export default function App() {
-  const [activeView, setActiveView] = useState<ViewMode>('all');
+  const [selectedTravelerId, setSelectedTravelerId] = useState<string | null>(() =>
+    localStorage.getItem(SELECTED_TRAVELER_STORAGE_KEY)
+  );
   const [selectedTripId, setSelectedTripId] = useState<number | null>(null);
 
   // Modal control states
   const [selectedPass, setSelectedPass] = useState<Pass | null>(null);
   const [showSyncModal, setShowSyncModal] = useState(false);
+  const [travelerSelectionOptions, setTravelerSelectionOptions] = useState<string[]>([]);
+  const [showTravelerSelection, setShowTravelerSelection] = useState(false);
 
   // Live queries from Dexie.js
-  const trips = useLiveQuery(() => db.trips.toArray()) || [];
-  const passes = useLiveQuery(() => db.passes.toArray()) || [];
+  const tripsQuery = useLiveQuery(() => db.trips.toArray());
+  const passesQuery = useLiveQuery(() => db.passes.toArray());
+  const trips = tripsQuery || [];
+  const passes = passesQuery || [];
+  const travelerIds = useMemo(
+    () => getTravelerIds(tripsQuery || [], passesQuery || []),
+    [tripsQuery, passesQuery]
+  );
+  const dataLoaded = tripsQuery !== undefined && passesQuery !== undefined;
 
-  // The shared wallet is the default. Traveller filters are optional views for
-  // bookings such as seats and barcodes that differ between people.
+  useEffect(() => {
+    if (!dataLoaded) return;
+
+    if (travelerIds.length === 0) {
+      if (selectedTravelerId !== null) {
+        localStorage.removeItem(SELECTED_TRAVELER_STORAGE_KEY);
+        setSelectedTravelerId(null);
+      }
+      return;
+    }
+
+    if (!selectedTravelerId || !travelerIds.includes(selectedTravelerId)) {
+      setTravelerSelectionOptions(travelerIds);
+      setShowTravelerSelection(true);
+    }
+  }, [dataLoaded, selectedTravelerId, travelerIds]);
+
+  const selectTraveler = (travelerId: string) => {
+    localStorage.setItem(SELECTED_TRAVELER_STORAGE_KEY, travelerId);
+    setSelectedTravelerId(travelerId);
+    setSelectedTripId(null);
+    setShowTravelerSelection(false);
+  };
+
+  const handleImportComplete = (importedTravelerIds: string[]) => {
+    setSelectedTripId(null);
+    if (importedTravelerIds.length > 0) {
+      setTravelerSelectionOptions(importedTravelerIds);
+      setShowTravelerSelection(true);
+    }
+  };
+
+  const handleDataCleared = () => {
+    localStorage.removeItem(SELECTED_TRAVELER_STORAGE_KEY);
+    setSelectedTravelerId(null);
+    setSelectedTripId(null);
+    setShowTravelerSelection(false);
+  };
+
   const getFilteredTrips = () => {
-    if (activeView === 'all') return trips;
-    if (activeView === 'group') return [];
+    if (travelerIds.length === 0) return trips;
+    if (!selectedTravelerId) return [];
 
     return trips.filter(
-      (trip) => (trip.travelerId || 'shared') === activeView || (trip.travelerId || 'shared') === 'shared'
+      (trip) =>
+        (trip.travelerId || SHARED_TRAVELER_ID) === selectedTravelerId ||
+        (trip.travelerId || SHARED_TRAVELER_ID) === SHARED_TRAVELER_ID
     );
   };
 
   const getFilteredPassesForTrip = (tripId: number) => {
     return passes.filter(
       (pass) => pass.tripId === tripId && (
-        activeView === 'all' ||
-        activeView === 'group' ||
-        (pass.travelerId || 'shared') === activeView ||
-        (pass.travelerId || 'shared') === 'shared'
+        travelerIds.length === 0 ||
+        (pass.travelerId || SHARED_TRAVELER_ID) === selectedTravelerId ||
+        (pass.travelerId || SHARED_TRAVELER_ID) === SHARED_TRAVELER_ID
       )
     );
   };
@@ -72,21 +122,21 @@ export default function App() {
 
         {/* Global Toolbar buttons */}
         <div className="flex items-center gap-2">
-          {/* Shared view with optional traveller and group filters */}
-          <select
-            value={activeView}
-            onChange={(e) => {
-              setActiveView(e.target.value as ViewMode);
-              setSelectedTripId(null);
-            }}
-            aria-label="Filter travel wallet"
-            className="bg-slate-900 border border-white/10 text-slate-300 text-xs px-2.5 py-2 rounded-xl focus:outline-none focus:border-violet-500 font-bold tracking-wide cursor-pointer"
-          >
-            <option value="all" className="bg-slate-900">All Trips</option>
-            <option value="tony" className="bg-slate-900">Tony</option>
-            <option value="graeme" className="bg-slate-900">Graeme</option>
-            <option value="group" className="bg-slate-900">Group</option>
-          </select>
+          {travelerIds.length > 0 && (
+            <select
+              value={selectedTravelerId || ''}
+              onChange={(event) => selectTraveler(event.target.value)}
+              aria-label="Choose traveller"
+              className="max-w-36 bg-slate-900 border border-white/10 text-slate-300 text-xs px-2.5 py-2 rounded-xl focus:outline-none focus:border-violet-500 font-bold tracking-wide cursor-pointer"
+            >
+              <option value="" disabled>Choose traveller</option>
+              {travelerIds.map((travelerId) => (
+                <option key={travelerId} value={travelerId} className="bg-slate-900">
+                  {formatTravelerId(travelerId)}
+                </option>
+              ))}
+            </select>
+          )}
 
           <button
             onClick={() => setShowSyncModal(true)}
@@ -124,22 +174,6 @@ export default function App() {
             {/* Vertical Timeline Component */}
             <VerticalTimeline
               passes={getFilteredPassesForTrip(currentSelectedTrip.id!)}
-              onSelectPass={(pass) => setSelectedPass(pass)}
-            />
-          </div>
-        ) : activeView === 'group' ? (
-          
-          /* GROUP PASSES CAROUSEL MODE (Shows everything chronologically) */
-          <div className="bg-slate-900/40 p-5 rounded-3xl border border-white/5 shadow-xl">
-            <div className="flex flex-col mb-4">
-              <h2 className="text-lg font-bold text-slate-200">Group boarding dashboard</h2>
-              <p className="text-xs text-slate-400 mt-1 leading-normal">
-                Swipe through all active flight tickets, train passes, and reservation vouchers in chronological order for swift check-in.
-              </p>
-            </div>
-            
-            <GroupPassesCarousel
-              passes={passes}
               onSelectPass={(pass) => setSelectedPass(pass)}
             />
           </div>
@@ -190,6 +224,15 @@ export default function App() {
       {showSyncModal && (
         <SyncModal
           onClose={() => setShowSyncModal(false)}
+          onImportComplete={handleImportComplete}
+          onDataCleared={handleDataCleared}
+        />
+      )}
+
+      {showTravelerSelection && travelerSelectionOptions.length > 0 && (
+        <TravelerSelectionModal
+          travelerIds={travelerSelectionOptions}
+          onSelect={selectTraveler}
         />
       )}
 

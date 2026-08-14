@@ -1,12 +1,24 @@
 import React, { useState } from 'react';
 import { db, type Attachment, type Trip, type Pass } from '../db';
+import {
+  assertTravelerLimit,
+  getTravelerIds,
+  normalizeTravelerId,
+  SHARED_TRAVELER_ID,
+} from '../travelers';
 import { X, Download, Upload, Clipboard, Check, RefreshCw } from 'lucide-react';
 
 interface SyncModalProps {
   onClose: () => void;
+  onImportComplete: (travelerIds: string[]) => void;
+  onDataCleared: () => void;
 }
 
-export const SyncModal: React.FC<SyncModalProps> = ({ onClose }) => {
+export const SyncModal: React.FC<SyncModalProps> = ({
+  onClose,
+  onImportComplete,
+  onDataCleared,
+}) => {
   const [copied, setCopied] = useState(false);
   const [importText, setImportText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -147,12 +159,14 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose }) => {
 
       const normalizedTrips = trips.map((trip: Trip) => ({
         ...trip,
-        travelerId: trip.travelerId || 'shared',
+        travelerId: normalizeTravelerId(trip.travelerId),
       }));
       const normalizedPasses = passes.map((pass: Pass) => ({
         ...pass,
-        travelerId: pass.travelerId || 'shared',
+        travelerId: normalizeTravelerId(pass.travelerId),
       }));
+      const importedTravelerIds = getTravelerIds(normalizedTrips, normalizedPasses);
+      assertTravelerLimit(importedTravelerIds);
 
       await db.transaction('rw', [db.trips, db.passes, db.profiles, db.attachments], async () => {
         setStatus('Clearing current local database...');
@@ -181,8 +195,9 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose }) => {
       });
 
       setStatus('Import completed successfully!');
-      alert('Backup restored successfully! The page will now reload.');
+      alert('Backup restored successfully!');
       onClose();
+      onImportComplete(importedTravelerIds);
     } catch (err: any) {
       console.error('Import failed:', err);
       setStatus(`Import failed: ${err.message}`);
@@ -196,12 +211,36 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose }) => {
     setStatus('Parsing sync updates...');
     try {
       const payload = JSON.parse(jsonString);
-      const payloadTrips = (payload.trips || []) as any[];
-      const payloadPasses = (payload.passes || []) as any[];
 
       if (!payload.trips && !payload.passes) {
         throw new Error('Invalid update payload format. Missing "trips" or "passes" arrays.');
       }
+
+      if (payload.trips && !Array.isArray(payload.trips)) {
+        throw new Error('Invalid update payload format. "trips" must be an array.');
+      }
+
+      if (payload.passes && !Array.isArray(payload.passes)) {
+        throw new Error('Invalid update payload format. "passes" must be an array.');
+      }
+
+      const payloadTrips = ((payload.trips || []) as any[]).map((trip) => ({
+        ...trip,
+        ...(trip.travelerId !== undefined
+          ? { travelerId: normalizeTravelerId(trip.travelerId) }
+          : {}),
+      }));
+      const payloadPasses = ((payload.passes || []) as any[]).map((pass) => ({
+        ...pass,
+        ...(pass.travelerId !== undefined
+          ? { travelerId: normalizeTravelerId(pass.travelerId) }
+          : {}),
+      }));
+      const importedTravelerIds = getTravelerIds(
+        payloadTrips.filter((trip) => trip.action !== 'delete'),
+        payloadPasses.filter((pass) => pass.action !== 'delete')
+      );
+      assertTravelerLimit(importedTravelerIds);
 
       let tripsUpserted = 0;
       let tripsDeleted = 0;
@@ -235,7 +274,8 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose }) => {
               const mergedTrip = {
                 ...existingTrip,
                 ...updateData,
-                travelerId: updateData.travelerId || existingTrip.travelerId || 'shared',
+                travelerId:
+                  updateData.travelerId || existingTrip.travelerId || SHARED_TRAVELER_ID,
               };
               await db.trips.put(mergedTrip);
               tripsUpserted++;
@@ -246,7 +286,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose }) => {
               }
               await db.trips.add({
                 ...(newData as Trip),
-                travelerId: newData.travelerId || 'shared',
+                travelerId: newData.travelerId || SHARED_TRAVELER_ID,
               });
               tripsUpserted++;
             }
@@ -303,7 +343,8 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose }) => {
               const mergedPass = {
                 ...existingPass,
                 ...updateData,
-                travelerId: updateData.travelerId || existingPass.travelerId || 'shared',
+                travelerId:
+                  updateData.travelerId || existingPass.travelerId || SHARED_TRAVELER_ID,
               };
               if (resolvedTripId !== undefined) {
                 mergedPass.tripId = resolvedTripId;
@@ -330,7 +371,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose }) => {
               const passToAdd: Pass = {
                 ...(newData as Pass),
                 tripId: matchedTrip.id,
-                travelerId: newData.travelerId || 'shared',
+                travelerId: newData.travelerId || SHARED_TRAVELER_ID,
               };
               if (attachmentId !== undefined) {
                 passToAdd.attachmentId = attachmentId;
@@ -340,12 +381,17 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose }) => {
             }
           }
         }
+
+        const allTrips = await db.trips.toArray();
+        const allPasses = await db.passes.toArray();
+        assertTravelerLimit(getTravelerIds(allTrips, allPasses));
       });
 
       const message = `Sync succeeded! Applied: Trips (Upserted: ${tripsUpserted}, Deleted: ${tripsDeleted}), Passes (Upserted: ${passesUpserted}, Deleted: ${passesDeleted}).`;
       setStatus(message);
       alert(message);
       onClose();
+      onImportComplete(importedTravelerIds);
     } catch (err: any) {
       console.error('Incremental Sync failed:', err);
       setStatus(`Sync failed: ${err.message}`);
@@ -395,6 +441,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose }) => {
         });
         setStatus("All data successfully cleared! Reloading page...");
         alert("All local data has been deleted. The application will now reload.");
+        onDataCleared();
         onClose();
       } catch (err: any) {
         console.error("Clear failed:", err);
