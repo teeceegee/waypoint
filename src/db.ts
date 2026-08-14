@@ -52,6 +52,8 @@ class WaypointDatabase extends Dexie {
   trips!: Table<Trip>;
   passes!: Table<Pass>;
   attachments!: Table<Attachment>;
+  // Retained so existing version 2 backups and databases remain compatible.
+  // The app no longer asks for or uses a device-owner profile.
   profiles!: Table<Profile>;
 
   constructor() {
@@ -69,20 +71,3 @@ class WaypointDatabase extends Dexie {
 }
 
 export const db = new WaypointDatabase();
-
-// --- SEED DATA HELPER ---
-
-export async function seedDatabase() {
-  const profileCount = await db.profiles.count();
-  if (profileCount > 0) {
-    return; // Profiles already seeded
-  }
-
-  console.log('Database empty. Seeding initial travel profiles...');
-
-  // 1. Seed Profiles
-  await db.profiles.bulkAdd([
-    { id: 'tony', name: 'Tony', isDeviceOwner: true },
-    { id: 'graeme', name: 'Graeme', isDeviceOwner: false }
-  ]);
-}

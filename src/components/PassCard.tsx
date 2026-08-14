@@ -129,7 +129,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClick }) => {
         <span
           className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider font-mono border ${style.badgeClass}`}
         >
-          {pass.travelerId === 'shared' ? 'group' : pass.travelerId}
+          {!pass.travelerId || pass.travelerId === 'shared' ? 'shared' : pass.travelerId}
         </span>
       </div>
 

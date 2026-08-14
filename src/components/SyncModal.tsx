@@ -4,10 +4,9 @@ import { X, Download, Upload, Clipboard, Check, RefreshCw } from 'lucide-react';
 
 interface SyncModalProps {
   onClose: () => void;
-  onImportComplete: () => void;
 }
 
-export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete }) => {
+export const SyncModal: React.FC<SyncModalProps> = ({ onClose }) => {
   const [copied, setCopied] = useState(false);
   const [importText, setImportText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,7 +42,6 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
     try {
       const trips = await db.trips.toArray();
       const passes = await db.passes.toArray();
-      const profiles = await db.profiles.toArray();
       const rawAttachments = await db.attachments.toArray();
 
       // Convert attachments blobs to base64
@@ -64,7 +62,6 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
         data: {
           trips,
           passes,
-          profiles,
           attachments,
         },
       };
@@ -96,7 +93,6 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
     try {
       const trips = await db.trips.toArray();
       const passes = await db.passes.toArray();
-      const profiles = await db.profiles.toArray();
       const rawAttachments = await db.attachments.toArray();
 
       const attachments = await Promise.all(
@@ -112,7 +108,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
         app: 'waypoint',
         version: 2,
         exportedAt: new Date().toISOString(),
-        data: { trips, passes, profiles, attachments },
+        data: { trips, passes, attachments },
       };
 
       await navigator.clipboard.writeText(JSON.stringify(bundle));
@@ -149,6 +145,15 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
         throw new Error('Corrupted backup structure.');
       }
 
+      const normalizedTrips = trips.map((trip: Trip) => ({
+        ...trip,
+        travelerId: trip.travelerId || 'shared',
+      }));
+      const normalizedPasses = passes.map((pass: Pass) => ({
+        ...pass,
+        travelerId: pass.travelerId || 'shared',
+      }));
+
       await db.transaction('rw', [db.trips, db.passes, db.profiles, db.attachments], async () => {
         setStatus('Clearing current local database...');
         await db.trips.clear();
@@ -156,12 +161,12 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
         await db.profiles.clear();
         await db.attachments.clear();
 
-        setStatus('Restoring profiles & trips...');
+        setStatus('Restoring trips...');
         if (profiles && Array.isArray(profiles)) {
           await db.profiles.bulkAdd(profiles);
         }
-        await db.trips.bulkAdd(trips);
-        await db.passes.bulkAdd(passes);
+        await db.trips.bulkAdd(normalizedTrips);
+        await db.passes.bulkAdd(normalizedPasses);
 
         setStatus('Restoring attachments (converting binary blobs)...');
         if (attachments && Array.isArray(attachments)) {
@@ -177,7 +182,6 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
 
       setStatus('Import completed successfully!');
       alert('Backup restored successfully! The page will now reload.');
-      onImportComplete();
       onClose();
     } catch (err: any) {
       console.error('Import failed:', err);
@@ -227,16 +231,23 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
           } else {
             // upsert
             if (existingTrip) {
-              const { action, ...updateData } = trip;
-              const mergedTrip = { ...existingTrip, ...updateData };
+              const { action: _action, ...updateData } = trip;
+              const mergedTrip = {
+                ...existingTrip,
+                ...updateData,
+                travelerId: updateData.travelerId || existingTrip.travelerId || 'shared',
+              };
               await db.trips.put(mergedTrip);
               tripsUpserted++;
             } else {
-              const { action, ...newData } = trip;
+              const { action: _action, ...newData } = trip;
               if (!newData.name || !newData.destination || !newData.startDate || !newData.endDate) {
                 throw new Error(`Cannot add new trip with slug '${trip.slug}': Missing name, destination, startDate, or endDate.`);
               }
-              await db.trips.add(newData as Trip);
+              await db.trips.add({
+                ...(newData as Trip),
+                travelerId: newData.travelerId || 'shared',
+              });
               tripsUpserted++;
             }
           }
@@ -288,8 +299,12 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
             }
 
             if (existingPass) {
-              const { action, attachment, ...updateData } = pass;
-              const mergedPass = { ...existingPass, ...updateData };
+              const { action: _action, attachment: _attachment, ...updateData } = pass;
+              const mergedPass = {
+                ...existingPass,
+                ...updateData,
+                travelerId: updateData.travelerId || existingPass.travelerId || 'shared',
+              };
               if (resolvedTripId !== undefined) {
                 mergedPass.tripId = resolvedTripId;
               }
@@ -299,9 +314,9 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
               await db.passes.put(mergedPass);
               passesUpserted++;
             } else {
-              const { action, attachment, ...newData } = pass;
-              if (!newData.title || !newData.type || !newData.travelerId || !newData.date || !newData.location || !newData.barcodeType) {
-                throw new Error(`Cannot add new pass with slug '${pass.slug}': Missing title, type, travelerId, date, location, or barcodeType.`);
+              const { action: _action, attachment: _attachment, ...newData } = pass;
+              if (!newData.title || !newData.type || !newData.date || !newData.location || !newData.barcodeType) {
+                throw new Error(`Cannot add new pass with slug '${pass.slug}': Missing title, type, date, location, or barcodeType.`);
               }
               if (!newData.tripSlug) {
                 throw new Error(`Cannot add new pass with slug '${pass.slug}': Missing tripSlug mapping.`);
@@ -314,7 +329,8 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
 
               const passToAdd: Pass = {
                 ...(newData as Pass),
-                tripId: matchedTrip.id
+                tripId: matchedTrip.id,
+                travelerId: newData.travelerId || 'shared',
               };
               if (attachmentId !== undefined) {
                 passToAdd.attachmentId = attachmentId;
@@ -329,7 +345,6 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
       const message = `Sync succeeded! Applied: Trips (Upserted: ${tripsUpserted}, Deleted: ${tripsDeleted}), Passes (Upserted: ${passesUpserted}, Deleted: ${passesDeleted}).`;
       setStatus(message);
       alert(message);
-      onImportComplete();
       onClose();
     } catch (err: any) {
       console.error('Incremental Sync failed:', err);
@@ -380,7 +395,6 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onImportComplete 
         });
         setStatus("All data successfully cleared! Reloading page...");
         alert("All local data has been deleted. The application will now reload.");
-        onImportComplete();
         onClose();
       } catch (err: any) {
         console.error("Clear failed:", err);

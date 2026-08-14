@@ -187,7 +187,7 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
                     </span>
                   )}
                   <span className={`text-[9px] font-bold font-mono px-2 py-0.5 rounded uppercase border ${style.badgeClass}`}>
-                    {pass.travelerId === 'shared' ? 'group' : pass.travelerId}
+                    {!pass.travelerId || pass.travelerId === 'shared' ? 'shared' : pass.travelerId}
                   </span>
                 </div>
 

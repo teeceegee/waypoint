@@ -9,6 +9,8 @@ Use this document to instruct any system, parser, or Large Language Model (LLM) 
 The update payload is a flat JSON object containing two optional arrays: `"trips"` and `"passes"`. 
 Each item in these arrays **must** specify an `action` (`"upsert"` or `"delete"`) and a stable string `slug` (used to uniquely identify the item).
 
+Waypoint is a shared wallet. New trips and passes default to `"shared"` when `travelerId` is omitted. Include `travelerId: "tony"` or `travelerId: "graeme"` only when a booking, seat, barcode, or document belongs to one traveller. Existing records keep their current traveller label when an incremental update omits the field.
+
 ### Attachment Support (New)
 You can attach documents (PDF boarding passes, reservation screenshots, etc.) directly by including an `"attachment"` object in any pass. 
 The system will automatically decode the base64 data and store it offline in IndexedDB.
@@ -24,7 +26,7 @@ The system will automatically decode the base64 data and store it offline in Ind
       "startDate": "YYYY-MM-DD (required for new)",
       "endDate": "YYYY-MM-DD (required for new)",
       "description": "string (optional)",
-      "travelerId": "tony" | "graeme" | "shared" (required for new)
+      "travelerId": "tony" | "graeme" | "shared" (optional, defaults to "shared")
     }
   ],
   "passes": [
@@ -34,7 +36,7 @@ The system will automatically decode the base64 data and store it offline in Ind
       "tripSlug": "string (references Trip slug, required for new)",
       "title": "string (required for new)",
       "type": "flight" | "train" | "bus" | "hotel" | "restaurant" | "activity" | "other" (required for new),
-      "travelerId": "tony" | "graeme" | "shared" (required for new),
+      "travelerId": "tony" | "graeme" | "shared" (optional, defaults to "shared"),
       "date": "YYYY-MM-DD (required for new)",
       "time": "HH:MM (optional, 24h format)",
       "location": "string (required for new)",
@@ -107,8 +109,7 @@ If you found the barcode string and PDF attachment for an existing flight pass `
       "destination": "Tokyo, Japan",
       "startDate": "2026-08-10",
       "endDate": "2026-08-23",
-      "description": "First joint trip to Japan!",
-      "travelerId": "shared"
+      "description": "First joint trip to Japan!"
     }
   ],
   "passes": [

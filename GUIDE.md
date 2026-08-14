@@ -1,6 +1,6 @@
 # Waypoint — User Guide
 
-A personal travel wallet PWA for Tony and Graeme. Stores trips, boarding passes, hotel reservations, restaurant bookings, rail tickets, and activity passes — fully offline on your device.
+A shared travel wallet PWA for trips, boarding passes, hotel reservations, restaurant bookings, rail tickets, and activity passes — fully offline on your device.
 
 ---
 
@@ -28,8 +28,25 @@ The app will appear on your home screen and launch in fullscreen mode with no br
 3. Tap **Install App** or **Add to Home Screen**
 4. Tap **Install**
 
-### Sharing with Graeme
-Just send him the URL above via iMessage or WhatsApp. He follows the same steps above to install it on his phone.
+### Installing on another device
+Send the URL by message or email, then follow the same installation steps on the other device. Each device keeps its own local copy of the data.
+
+---
+
+## 🧭 Using Waypoint
+
+Waypoint opens directly in **All Trips**, with no device-owner setup.
+
+1. Tap a trip card to open its chronological timeline.
+2. Tap a pass to view its details, barcode, and attached document.
+3. Use the selector in the header when you want a narrower view:
+   - **All Trips** shows the complete shared wallet.
+   - **Tony** shows shared items plus items labelled for Tony.
+   - **Graeme** shows shared items plus items labelled for Graeme.
+   - **Group** shows every pass in a swipeable chronological carousel.
+4. Tap the **Database icon** to import updates, export a backup, restore a backup, or wipe local data.
+
+Traveller labels are optional. Use them only when seats, barcodes, confirmation details, or documents differ between travellers.
 
 ---
 
@@ -52,9 +69,10 @@ All data is added via JSON update files. See **[llm_json_instructions.md](./llm_
 
 ### How to Import
 1. Tap the **Database icon** (top-right of the app header)
-2. Scroll to **Incremental Updates**
+2. Find **Import Incremental Updates**
 3. Tap **Upload Update JSON File** and select your `.json` file
-   — or paste raw JSON into the text box and tap **Apply Update**
+
+The paste box under **Import Backup / Restore** is only for a complete exported backup. It does not accept an incremental update.
 
 ### Update Actions
 Each item in the JSON uses an `action` field:
@@ -63,20 +81,24 @@ Each item in the JSON uses an `action` field:
 
 You only need to include fields that are changing — unchanged fields are preserved automatically.
 
+If `travelerId` is omitted when a new trip or pass is created, Waypoint defaults it to `shared`. Add `"travelerId": "tony"` or `"travelerId": "graeme"` only for an individual booking.
+
 ---
 
-## 📤 Sharing Data with Graeme
+## 📤 Moving Data Between Devices
 
 ### Export your data
 1. Open the **Database icon** in the app header
 2. Tap **Download JSON** — saves a backup file to your phone
-3. AirDrop, iMessage, or email the file to Graeme
+3. Transfer the file securely to the other device
 
-### Graeme imports it
-1. He opens **Waypoint** on his phone
-2. Taps the **Database icon**
-3. Scrolls to **Import Backup / Restore**
-4. Taps **Upload Backup JSON File** and selects the file you sent
+### Restore it on the other device
+1. Open **Waypoint** on the destination device
+2. Tap the **Database icon**
+3. Find **Import Backup / Restore**
+4. Tap **Upload Backup JSON File** and select the transferred file
+
+> Restoring a full backup replaces all Waypoint data currently stored on that device. Export the destination device first if it contains anything you may need.
 
 ---
 
@@ -145,15 +167,17 @@ The repository is currently **public**, which is required for GitHub Pages to wo
 
 ---
 
-## 👤 Traveller Profiles
+## 👤 Optional Traveller Labels
 
 | ID | Name |
 |---|---|
 | `tony` | Tony |
 | `graeme` | Graeme |
-| `shared` | Both travellers |
+| `shared` | Shared wallet item (the default) |
 
-Use the `travelerId` field in JSON updates to assign items to the right person.
+You do not need to identify the device owner. Waypoint opens in **All Trips** and stores one shared wallet on each device.
+
+The `travelerId` field is optional for new trips and passes and defaults to `shared`. Use `tony` or `graeme` only when an item genuinely belongs to one traveller. The header filters use these labels; they are not separate accounts and provide no access control.
 
 ---
 
@@ -168,8 +192,7 @@ Use the `travelerId` field in JSON updates to assign items to the right person.
       "name": "My Trip",
       "destination": "Paris, France",
       "startDate": "2026-09-01",
-      "endDate": "2026-09-05",
-      "travelerId": "shared"
+      "endDate": "2026-09-05"
     }
   ],
   "passes": [

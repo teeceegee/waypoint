@@ -69,7 +69,7 @@ export const PassDetailsModal: React.FC<PassDetailsModalProps> = ({
       if (activeLock) {
         try {
           await activeLock.release();
-        } catch (e) {}
+        } catch {}
         activeLock = null;
       }
     };
@@ -362,7 +362,7 @@ export const PassDetailsModal: React.FC<PassDetailsModalProps> = ({
 
               <div>
                 <span className={`text-[9px] uppercase block font-mono tracking-wider ${modalStyle.labelText}`}>Traveler</span>
-                <span className={`text-xs capitalize font-bold ${modalStyle.valueText}`}>{pass.travelerId === 'shared' ? 'Shared Group' : pass.travelerId}</span>
+                <span className={`text-xs capitalize font-bold ${modalStyle.valueText}`}>{!pass.travelerId || pass.travelerId === 'shared' ? 'Shared' : pass.travelerId}</span>
               </div>
             </div>
 
