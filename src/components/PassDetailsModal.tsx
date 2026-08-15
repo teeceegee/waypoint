@@ -3,7 +3,7 @@ import { type Pass, db, type Attachment } from '../db';
 import { getPassTypeDisplayName, normalizePassType } from '../passTypes';
 import { getSmartMapsUrl, getMapsServiceName } from '../maps';
 import { BarcodeRenderer } from './BarcodeRenderer';
-import { X, Maximize2, ShieldAlert, FileText, Download, Eye, MapPin, ExternalLink } from 'lucide-react';
+import { X, Maximize2, ShieldAlert, FileText, Download, Eye, MapPin, ExternalLink, Globe } from 'lucide-react';
 
 interface PassDetailsModalProps {
   pass: Pass;
@@ -170,15 +170,15 @@ export const PassDetailsModal: React.FC<PassDetailsModalProps> = ({
         };
       case 'activity':
         return {
-          containerBg: 'bg-gradient-to-br from-fuchsia-600 via-purple-700 to-indigo-900 text-white border-fuchsia-500/20',
-          headerBg: 'border-b border-white/10 bg-black/10',
-          titleText: 'text-white font-bold',
-          subtitleText: 'text-fuchsia-200',
-          labelText: 'text-fuchsia-200/70',
-          valueText: 'text-white',
-          cardBg: 'bg-black/15 border border-white/5',
-          btnClass: 'text-white/70 hover:text-white hover:bg-white/10',
-          deleteBtnClass: 'text-red-300 hover:text-red-200 hover:bg-red-500/20'
+          containerBg: 'bg-gradient-to-br from-white via-slate-50 to-slate-100 text-slate-950 border-white/60 shadow-2xl',
+          headerBg: 'border-b border-black/10 bg-black/5',
+          titleText: 'text-slate-950 font-black',
+          subtitleText: 'text-slate-700 font-bold',
+          labelText: 'text-slate-600/90 font-bold',
+          valueText: 'text-slate-950 font-extrabold',
+          cardBg: 'bg-black/5 border border-black/10',
+          btnClass: 'text-slate-900 hover:text-black hover:bg-black/10',
+          deleteBtnClass: 'text-red-700 hover:text-red-900 hover:bg-red-500/20'
         };
       default:
         return {
@@ -369,6 +369,23 @@ export const PassDetailsModal: React.FC<PassDetailsModalProps> = ({
                 </div>
                 <span className={`text-xs font-semibold block ${modalStyle.valueText}`}>{pass.location}</span>
               </div>
+
+              {pass.website && (
+                <div className="col-span-2">
+                  <span className={`text-[9px] uppercase block font-mono tracking-wider mb-1 ${modalStyle.labelText}`}>Official Website</span>
+                  <a
+                    href={pass.website.startsWith('http') ? pass.website : `https://${pass.website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold border transition ${modalStyle.btnClass} bg-black/10 border-white/10 max-w-full truncate`}
+                    title={pass.website}
+                  >
+                    <Globe className="w-4 h-4 text-violet-400 flex-shrink-0" />
+                    <span className="truncate">{pass.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</span>
+                    <ExternalLink className="w-3.5 h-3.5 opacity-60 flex-shrink-0" />
+                  </a>
+                </div>
+              )}
 
               <div>
                 <span className={`text-[9px] uppercase block font-mono tracking-wider ${modalStyle.labelText}`}>Traveler</span>

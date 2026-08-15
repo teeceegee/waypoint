@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useMemo } from 'react';
 import { type Pass } from '../db';
 import { getPassTypeStubLabel, normalizePassType } from '../passTypes';
 import { getSmartMapsUrl, getMapsServiceName } from '../maps';
-import { Plane, Hotel, Train, Ticket, Compass, CheckCircle2, Utensils, Bus, MapPin } from 'lucide-react';
+import { Plane, Hotel, Train, Ticket, Compass, CheckCircle2, Utensils, Bus, MapPin, Globe, ExternalLink } from 'lucide-react';
 
 interface VerticalTimelineProps {
   passes: Pass[];
@@ -107,13 +107,13 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
         };
       case 'activity':
         return {
-          cardClass: `bg-gradient-to-r from-fuchsia-600 via-purple-700 to-indigo-900 border-fuchsia-500/20 text-white ${nextRing}`,
-          punchClass: 'bg-slate-950 border-fuchsia-500/10',
-          dashClass: 'border-fuchsia-300/20',
-          badgeClass: 'bg-white/10 text-fuchsia-200 border-white/10',
-          textMuted: 'text-fuchsia-200',
-          textBold: 'text-white',
-          iconBg: 'bg-white/10 text-white border-white/10'
+          cardClass: `bg-gradient-to-br from-white via-slate-50 to-slate-100 border-white/80 text-slate-950 shadow-2xl ${nextRing}`,
+          punchClass: 'bg-slate-950 border-slate-300/80',
+          dashClass: 'border-slate-300/80',
+          badgeClass: 'bg-black/10 text-slate-900 border-black/10 font-bold',
+          textMuted: 'text-slate-600 font-semibold',
+          textBold: 'text-slate-950 font-black',
+          iconBg: 'bg-black/10 text-slate-950 border-black/10'
         };
       default:
         return {
@@ -211,6 +211,20 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
                         >
                           <MapPin className="w-2.5 h-2.5" />
                           <span>Map</span>
+                        </a>
+                      )}
+                      {pass.website && (
+                        <a
+                          href={pass.website.startsWith('http') ? pass.website : `https://${pass.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold border transition ${style.badgeClass} hover:opacity-100 opacity-85`}
+                          title="Visit Website"
+                        >
+                          <Globe className="w-2.5 h-2.5" />
+                          <span>Website</span>
+                          <ExternalLink className="w-2.5 h-2.5 opacity-60" />
                         </a>
                       )}
                     </div>

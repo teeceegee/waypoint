@@ -31,6 +31,7 @@ export interface Pass {
   barcodeContent?: string;
   notes?: string;
   mapsUrl?: string; // Deep link to Apple Maps or Google Maps
+  website?: string; // Direct URL to venue / attraction / reservation website
   attachmentId?: number; // Linked attachment in the attachments table
 }
 

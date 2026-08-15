@@ -66,13 +66,13 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClick }) => {
         };
       case 'activity':
         return {
-          cardClass: 'bg-gradient-to-r from-fuchsia-600 via-purple-700 to-indigo-900 border-fuchsia-500/20 text-white',
-          punchClass: 'bg-slate-950 border-fuchsia-500/10',
-          dashClass: 'border-fuchsia-300/20',
-          badgeClass: 'bg-white/10 text-fuchsia-200 border-white/10',
-          textMuted: 'text-fuchsia-200',
-          textBold: 'text-white',
-          iconBg: 'bg-white/10 text-white'
+          cardClass: 'bg-gradient-to-br from-white via-slate-50 to-slate-100 border-white/80 text-slate-950 shadow-xl',
+          punchClass: 'bg-slate-950 border-slate-300/80',
+          dashClass: 'border-slate-300/80',
+          badgeClass: 'bg-black/10 text-slate-900 border-black/10 font-bold',
+          textMuted: 'text-slate-600 font-semibold',
+          textBold: 'text-slate-950 font-black',
+          iconBg: 'bg-black/10 text-slate-950 border-black/10'
         };
       default:
         return {

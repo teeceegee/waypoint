@@ -99,8 +99,8 @@ export const TripSummaryCard: React.FC<TripSummaryCardProps> = ({ trip, passes, 
         )}
 
         {activityCount > 0 && (
-          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-fuchsia-950/30 border border-fuchsia-500/20 text-fuchsia-300 text-[11px] font-semibold font-mono">
-            <Compass className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/10 border border-white/25 text-slate-100 text-[11px] font-semibold font-mono">
+            <Compass className="w-3.5 h-3.5 text-slate-200" />
             <span>{activityCount} {activityCount === 1 ? 'Activity' : 'Activities'}</span>
           </div>
         )}

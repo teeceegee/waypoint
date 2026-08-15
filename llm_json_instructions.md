@@ -49,6 +49,7 @@ The system will automatically decode the base64 data and store it offline in Ind
       "barcodeContent": "string (optional, raw barcode payload)",
       "notes": "string (optional)",
       "mapsUrl": "string (optional, Apple Maps or Google Maps URL, e.g. 'https://maps.apple.com/?q=Freyja+Hornsgatan+18+Stockholm')",
+      "website": "string (optional URL, e.g. 'https://www.tivoli.dk/')",
       "attachment": {
         "fileName": "string (e.g. 'pass.pdf')",
         "fileType": "string (e.g. 'application/pdf' or 'image/png')",
@@ -59,8 +60,12 @@ The system will automatically decode the base64 data and store it offline in Ind
 }
 ```
 
+### Direct Website Links (`website`)
+Any pass (activity, attraction, dining booking, hotel, transit provider) can specify an optional `website` URL. 
+Waypoint presents this as a dedicated website button directly on the timeline card and inside the pass details modal for rapid one-tap access to menus, opening hours, or official guides.
+
 ### Apple Maps & Google Maps Deep Linking (`mapsUrl`)
-Any pass (activity, dining reservation, hotel, transit, etc.) can include a `mapsUrl` field.
+Any pass can include a `mapsUrl` field.
 Waypoint is OS-aware:
 - On **iOS / iPadOS / macOS**, tapping the map button automatically opens **Apple Maps**.
 - On **Android / Windows / Linux**, Apple Maps queries are automatically adapted to open seamlessly in **Google Maps**.
@@ -70,32 +75,68 @@ Waypoint is OS-aware:
 
 ## 🤖 Gmail Scraper & LLM Integration Guide
 
-If you are using an LLM or script to scan a traveler's Gmail inbox for barcodes, confirmation documents, and location addresses, follow these steps to generate the sync file:
+If you are using an LLM or script to scan a traveler's Gmail inbox for barcodes, confirmation documents, website links, and location addresses, follow these steps to generate the sync file:
 
 1.  **Search & Match:**
     *   Find the relevant email in Gmail by searching for the flight number, hotel name, or travel dates.
     *   Locate the pass in the Waypoint app by matching the `confirmationCode` (e.g. `ZYLQQY`), `date`, or `title`.
-2.  **Extract the Barcode & Location Maps:**
+2.  **Extract Details, Barcode & Links:**
     *   Scan the email body or attachments for barcode patterns (Aztec, PDF417, or QR codes).
     *   Extract the raw text string containing the barcode payload (e.g. the standard IATA BCBP string for flights).
-    *   Extract destination addresses and format as an Apple Maps / Google Maps URL in `mapsUrl`.
+    *   Extract destination addresses for `mapsUrl` and official homepage/booking URLs for `website`.
 3.  **Extract Attachments:**
     *   If the email contains a PDF ticket or image boarding pass, extract the file, convert it to a base64 Data URL, and set the `attachment` fields.
 4.  **Format the Incremental Update:**
-    *   Write an incremental JSON update containing **only** the target pass's `slug` (or search terms) and the extracted barcode/attachment/maps fields. You do **not** need to respecify unchanged metadata.
+    *   Write an incremental JSON update containing **only** the target pass's `slug` (or search terms) and the extracted barcode/attachment/maps/website fields. You do **not** need to respecify unchanged metadata.
 
 ---
 
 ## 💡 Examples
 
-### Example 1: Adding a Maps URL & Barcode to an Activity or Restaurant
+### Example 1: Adding a Website & Maps URL to an Activity or Restaurant
 ```json
 {
   "passes": [
     {
       "action": "upsert",
       "slug": "pass-restaurant-freyja-soder",
-      "mapsUrl": "https://maps.apple.com/?q=Freyja+Hornsgatan+18+Stockholm"
+      "mapsUrl": "https://maps.apple.com/?q=Freyja+Hornsgatan+18+Stockholm",
+      "website": "https://www.freyjasoder.se/"
+    }
+  ]
+}
+```
+
+### Example 2: Creating a New Trip with an Activity Pass (White Card), Website & Barcode
+```json
+{
+  "trips": [
+    {
+      "action": "upsert",
+      "slug": "trip-cph-2026",
+      "name": "Copenhagen Weekend",
+      "destination": "Copenhagen, Denmark",
+      "startDate": "2026-09-04",
+      "endDate": "2026-09-07",
+      "description": "Autumn trip to Copenhagen"
+    }
+  ],
+  "passes": [
+    {
+      "action": "upsert",
+      "slug": "pass-activity-tivoli-gardens",
+      "tripSlug": "trip-cph-2026",
+      "title": "Tivoli Gardens Admission & Ride Pass",
+      "type": "activity",
+      "travelerId": "shared",
+      "date": "2026-09-05",
+      "time": "14:00",
+      "location": "Vesterbrogade 3, 1630 København V",
+      "mapsUrl": "https://maps.apple.com/?q=Tivoli+Gardens+Copenhagen",
+      "website": "https://www.tivoli.dk/",
+      "confirmationCode": "TIV-88219",
+      "barcodeType": "qr",
+      "barcodeContent": "https://www.tivoli.dk/tickets/TIV-88219"
     }
   ]
 }

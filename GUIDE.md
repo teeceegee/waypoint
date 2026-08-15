@@ -168,7 +168,7 @@ The repository is currently **public**, which is required for GitHub Pages to wo
 | 🚂 Train | Rail ticket (perforated edges) |
 | 🏨 Hotel | Green key card |
 | 🍽️ Restaurant | Red/orange reservation slip |
-| 🎡 Activity | Purple event ticket |
+| 🎡 Activity | **Clean white event ticket** |
 | 🚌 Bus | Amber coach ticket |
 | 📄 Other | Grey generic pass |
 
@@ -201,19 +201,19 @@ Traveller selection is a display filter, not an account, sign-in, or access-cont
   "passes": [
     {
       "action": "upsert",
-      "slug": "pass-flight-cdg-passenger-1",
+      "slug": "pass-activity-louvre",
       "tripSlug": "trip-mytrip-2026",
-      "title": "Flight BA304: LHR ➔ CDG",
-      "type": "flight",
-      "travelerId": "passenger-1",
-      "date": "2026-09-01",
-      "time": "08:00",
-      "location": "London Heathrow Terminal 5",
-      "mapsUrl": "https://maps.apple.com/?q=London+Heathrow+Terminal+5",
-      "seat": "12A",
-      "confirmationCode": "XYZABC",
-      "barcodeType": "pdf417",
-      "barcodeContent": "M1ME/PASSENGER..."
+      "title": "Musée du Louvre Entry",
+      "type": "activity",
+      "travelerId": "shared",
+      "date": "2026-09-02",
+      "time": "10:30",
+      "location": "Rue de Rivoli, 75001 Paris, France",
+      "mapsUrl": "https://maps.apple.com/?q=Louvre+Museum+Paris",
+      "website": "https://www.louvre.fr/en",
+      "confirmationCode": "LOU-9912",
+      "barcodeType": "qr",
+      "barcodeContent": "https://ticketlouvre.fr/LOU-9912"
     }
   ]
 }
