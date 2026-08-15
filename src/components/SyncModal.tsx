@@ -458,6 +458,21 @@ export const SyncModal: React.FC<SyncModalProps> = ({
     }
   };
 
+  const handleCheckUpdates = async () => {
+    setStatus('Checking for app updates...');
+    if ('serviceWorker' in navigator) {
+      try {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (registration) {
+          await registration.update();
+        }
+      } catch (e) {
+        console.error('Service worker update check failed:', e);
+      }
+    }
+    window.location.reload();
+  };
+
   return (
     <div className="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
       <div className="absolute inset-0" onClick={onClose} />
@@ -488,6 +503,20 @@ export const SyncModal: React.FC<SyncModalProps> = ({
               {status}
             </div>
           )}
+
+          {/* App Version & Refresh */}
+          <div className="flex items-center justify-between p-3 bg-slate-950/40 rounded-xl border border-white/5">
+            <div>
+              <span className="text-[10px] font-mono text-slate-400 block">Installed Version: <strong className="text-slate-200 font-bold">v{APP_VERSION}</strong></span>
+            </div>
+            <button
+              onClick={handleCheckUpdates}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 rounded-lg text-xs font-semibold transition active:scale-95"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Reload / Update</span>
+            </button>
+          </div>
 
           {/* Incremental JSON Import Section */}
           <div className="space-y-4">
