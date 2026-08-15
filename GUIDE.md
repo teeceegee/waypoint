@@ -167,7 +167,8 @@ The repository is currently **public**, which is required for GitHub Pages to wo
 | ✈️ Flight | Blue boarding pass |
 | 🚂 Train | Rail ticket (perforated edges) |
 | 🏨 Hotel | Green key card |
-| 🍽️ Restaurant | Red/orange reservation slip |
+| 🍽️ Restaurant (Confirmed) | Deep crimson reservation slip |
+| 🍴 Restaurant (Recommended) | Lighter warm coral / terracotta spot |
 | 🎡 Activity | **Clean white event ticket** |
 | 🚌 Bus | Amber coach ticket |
 | 📄 Other | Grey generic pass |

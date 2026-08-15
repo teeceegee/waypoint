@@ -87,41 +87,41 @@ export const normalizePassType = (value: unknown): PassType => {
   }
 };
 
-export const getPassTypeDisplayName = (type: PassType): string => {
+export const getPassTypeDisplayName = (type: PassType, status?: string): string => {
   const normalized = normalizePassType(type);
   switch (normalized) {
     case 'flight':
       return 'Flight Boarding Pass';
     case 'hotel':
-      return 'Accommodation Reservation';
+      return status === 'recommended' ? 'Recommended Hotel' : 'Accommodation Reservation';
     case 'train':
       return 'Train Ticket';
     case 'bus':
       return 'Bus / Transit Ticket';
     case 'restaurant':
-      return 'Restaurant Reservation';
+      return status === 'recommended' ? 'Dining Recommendation' : 'Restaurant Reservation';
     case 'activity':
-      return 'Activity Pass';
+      return status === 'recommended' ? 'Recommended Activity' : 'Activity Pass';
     default:
       return 'Travel Document';
   }
 };
 
-export const getPassTypeStubLabel = (type: PassType): string => {
+export const getPassTypeStubLabel = (type: PassType, status?: string): string => {
   const normalized = normalizePassType(type);
   switch (normalized) {
     case 'flight':
       return '✈️ Boarding Pass';
     case 'hotel':
-      return '🏨 Hotel Guest Pass';
+      return status === 'recommended' ? '🏨 Hotel Idea' : '🏨 Hotel Guest Pass';
     case 'restaurant':
-      return '🍽️ Dining Reservation';
+      return status === 'recommended' ? '🍴 Dining Recommendation' : '🍽️ Dining Reservation';
     case 'train':
       return '🚄 Railway Ticket';
     case 'bus':
       return '🚌 Transit Ticket';
     case 'activity':
-      return '🎟️ Activity Pass';
+      return status === 'recommended' ? '🎡 Activity Idea' : '🎟️ Activity Pass';
     default:
       return '📁 Travel Document';
   }

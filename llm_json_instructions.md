@@ -50,6 +50,7 @@ The system will automatically decode the base64 data and store it offline in Ind
       "notes": "string (optional)",
       "mapsUrl": "string (optional, Apple Maps or Google Maps URL, e.g. 'https://maps.apple.com/?q=Freyja+Hornsgatan+18+Stockholm')",
       "website": "string (optional URL, e.g. 'https://www.tivoli.dk/')",
+      "status": "confirmed" | "recommended" | "optional" (optional, defaults to "confirmed" if confirmationCode exists, otherwise "recommended"),
       "attachment": {
         "fileName": "string (e.g. 'pass.pdf')",
         "fileType": "string (e.g. 'application/pdf' or 'image/png')",
@@ -59,6 +60,11 @@ The system will automatically decode the base64 data and store it offline in Ind
   ]
 }
 ```
+
+### Confirmed Dining vs. Dining Recommendations (`status`)
+Waypoint distinguishes between **confirmed reservations** and **flexible food recommendations**:
+- **Confirmed Reservations (`status: "confirmed"`):** Uses a deep crimson/wine red card (`🍽️ Dining Reservation`) with time slot and booking reference.
+- **Dining Recommendations (`status: "recommended"`):** Uses a **lighter, warm coral/terracotta card** (`🍴 Dining Recommendation`) with `RECOMMENDED` badge and direct one-tap links to Menu/Website and Maps for drop-in visits.
 
 ### Direct Website Links (`website`)
 Any pass (activity, attraction, dining booking, hotel, transit provider) can specify an optional `website` URL. 

@@ -32,6 +32,7 @@ export interface Pass {
   notes?: string;
   mapsUrl?: string; // Deep link to Apple Maps or Google Maps
   website?: string; // Direct URL to venue / attraction / reservation website
+  status?: 'confirmed' | 'recommended' | 'optional'; // Distinguishes confirmed bookings from ideas/recommendations
   attachmentId?: number; // Linked attachment in the attachments table
 }
 

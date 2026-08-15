@@ -101,7 +101,7 @@ export const PassDetailsModal: React.FC<PassDetailsModalProps> = ({
 
 
   const getPassTypeName = () => {
-    return getPassTypeDisplayName(pass.type);
+    return getPassTypeDisplayName(pass.type, pass.status);
   };
 
   const formatDate = (dateStr: string) => {
@@ -157,6 +157,19 @@ export const PassDetailsModal: React.FC<PassDetailsModalProps> = ({
           deleteBtnClass: 'text-red-300 hover:text-red-200 hover:bg-red-500/20'
         };
       case 'restaurant':
+        if (pass.status === 'recommended') {
+          return {
+            containerBg: 'bg-gradient-to-br from-rose-700 via-rose-600 to-amber-700 text-white border-rose-400/30 shadow-2xl',
+            headerBg: 'border-b border-white/10 bg-black/10',
+            titleText: 'text-white font-extrabold',
+            subtitleText: 'text-rose-100 font-bold',
+            labelText: 'text-rose-100/80 font-semibold',
+            valueText: 'text-white font-bold',
+            cardBg: 'bg-black/15 border border-white/10',
+            btnClass: 'text-white/80 hover:text-white hover:bg-white/10',
+            deleteBtnClass: 'text-red-200 hover:text-white hover:bg-red-500/20'
+          };
+        }
         return {
           containerBg: 'bg-gradient-to-br from-rose-900 via-rose-950 to-red-950 text-white border-rose-500/20',
           headerBg: 'border-b border-white/10 bg-black/10',
@@ -390,6 +403,17 @@ export const PassDetailsModal: React.FC<PassDetailsModalProps> = ({
               <div>
                 <span className={`text-[9px] uppercase block font-mono tracking-wider ${modalStyle.labelText}`}>Traveler</span>
                 <span className={`text-xs capitalize font-bold ${modalStyle.valueText}`}>{!pass.travelerId || pass.travelerId === 'shared' ? 'Shared' : pass.travelerId}</span>
+              </div>
+
+              <div>
+                <span className={`text-[9px] uppercase block font-mono tracking-wider ${modalStyle.labelText}`}>Status</span>
+                <span className={`text-xs capitalize font-bold ${modalStyle.valueText}`}>
+                  {pass.status === 'recommended' 
+                    ? 'Recommended Spot' 
+                    : pass.confirmationCode 
+                    ? 'Confirmed Booking' 
+                    : 'Scheduled'}
+                </span>
               </div>
             </div>
 

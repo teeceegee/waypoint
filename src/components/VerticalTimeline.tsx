@@ -60,7 +60,7 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
     }
   };
 
-  const getTicketStyle = (type: Pass['type'], isNext: boolean) => {
+  const getTicketStyle = (type: Pass['type'], isNext: boolean, status?: string) => {
     const nextRing = isNext ? 'ring-3 ring-violet-500 ring-offset-4 ring-offset-slate-950 shadow-[0_0_25px_rgba(139,92,246,0.5)] z-10' : '';
 
     switch (normalizePassType(type)) {
@@ -96,6 +96,17 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
           iconBg: 'bg-white/10 text-white border-white/15'
         };
       case 'restaurant':
+        if (status === 'recommended') {
+          return {
+            cardClass: `bg-gradient-to-r from-rose-700 via-rose-600 to-amber-700 border-rose-300/30 text-white shadow-xl ${nextRing}`,
+            punchClass: 'bg-slate-950 border-rose-400/30',
+            dashClass: 'border-rose-200/30',
+            badgeClass: 'bg-white/15 text-rose-100 border-white/15 font-bold',
+            textMuted: 'text-rose-100/90 font-medium',
+            textBold: 'text-white font-extrabold',
+            iconBg: 'bg-white/15 text-white border-white/15'
+          };
+        }
         return {
           cardClass: `bg-gradient-to-r from-rose-900 via-rose-950 to-red-950 border-rose-500/20 text-slate-100 ${nextRing}`,
           punchClass: 'bg-slate-950 border-rose-500/10',
@@ -141,7 +152,7 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
     <div className="relative pl-6 sm:pl-8 border-l border-white/10 space-y-8 my-4">
       {sortedPasses.map((pass, index) => {
         const isNext = pass.id === nextRequiredId;
-        const style = getTicketStyle(pass.type, isNext);
+        const style = getTicketStyle(pass.type, isNext, pass.status);
         const isPast = !isNext && new Date(`${pass.date}T${pass.time || '00:00'}`).getTime() < new Date().getTime();
 
         return (
@@ -183,6 +194,11 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
                   <span className={`text-[10px] font-bold font-mono tracking-wider px-2 py-0.5 rounded border ${style.badgeClass}`}>
                     {formatDate(pass.date)} {pass.time ? `@ ${pass.time}` : ''}
                   </span>
+                  {pass.status === 'recommended' && (
+                    <span className={`text-[9px] font-extrabold font-mono tracking-wider px-2 py-0.5 rounded border ${style.badgeClass}`}>
+                      RECOMMENDED
+                    </span>
+                  )}
                   {isNext && (
                     <span className="animate-pulse bg-violet-600 text-white font-extrabold text-[9px] px-2 py-0.5 rounded tracking-wider font-mono shadow-[0_0_10px_rgba(139,92,246,0.4)]">
                       NEXT UP
@@ -240,7 +256,7 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
               {/* Bottom part: Stub (Below the dashed line) */}
               <div className="px-5 py-3 h-14 flex items-center justify-between z-10 bg-black/10">
                 <span className={`text-[10px] uppercase font-black tracking-wider font-mono ${style.textMuted}`}>
-                  {getPassTypeStubLabel(pass.type)}
+                  {getPassTypeStubLabel(pass.type, pass.status)}
                 </span>
                 
                 <div className="flex items-center gap-4 text-xs font-mono">
@@ -259,14 +275,16 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
                         </div>
                       )}
                     </div>
-                  ) : (
-                    pass.confirmationCode && (
-                      <div className="text-right">
-                        <span className={`text-[8px] block uppercase font-sans leading-none mb-0.5 ${style.textMuted}`}>Confirm #</span>
-                        <span className={`${style.textBold} font-bold`}>{pass.confirmationCode}</span>
-                      </div>
-                    )
-                  )}
+                  ) : pass.confirmationCode ? (
+                    <div className="text-right">
+                      <span className={`text-[8px] block uppercase font-sans leading-none mb-0.5 ${style.textMuted}`}>Confirm #</span>
+                      <span className={`${style.textBold} font-bold`}>{pass.confirmationCode}</span>
+                    </div>
+                  ) : pass.status === 'recommended' ? (
+                    <span className={`text-[9px] uppercase font-mono tracking-wider ${style.textMuted}`}>
+                      Drop-in / No Booking
+                    </span>
+                  ) : null}
                 </div>
               </div>
             </div>

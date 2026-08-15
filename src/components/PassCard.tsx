@@ -55,6 +55,17 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClick }) => {
           iconBg: 'bg-white/10 text-white'
         };
       case 'restaurant':
+        if (pass.status === 'recommended') {
+          return {
+            cardClass: 'bg-gradient-to-r from-rose-700 via-rose-600 to-amber-700 border-rose-300/30 text-white shadow-xl',
+            punchClass: 'bg-slate-950 border-rose-400/30',
+            dashClass: 'border-rose-200/30',
+            badgeClass: 'bg-white/15 text-rose-100 border-white/15 font-bold',
+            textMuted: 'text-rose-100/90 font-medium',
+            textBold: 'text-white font-extrabold',
+            iconBg: 'bg-white/15 text-white'
+          };
+        }
         return {
           cardClass: 'bg-gradient-to-r from-rose-900 via-rose-950 to-red-950 border-rose-500/20 text-slate-100',
           punchClass: 'bg-slate-950 border-rose-500/10',

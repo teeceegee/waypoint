@@ -300,9 +300,15 @@ For `action: "delete"`, only `action` and `slug` are needed.
 | `notes` | No | Text | Additional instructions |
 | `mapsUrl` | No | URL | Apple Maps or Google Maps link for the destination |
 | `website` | No | URL | Official venue, attraction, restaurant, or hotel website |
+| `status` | No | `confirmed` or `recommended` | Distinguishes hard bookings from flexible recommendations |
 | `attachment` | No | Object | Embedded PDF or image |
 
 For a pass with no barcode, set `"barcodeType": "none"` and omit `barcodeContent`.
+
+### Confirmed Dining vs. Dining Recommendations
+
+- **`status: "confirmed"`:** Hard dining reservation with time and reference code, styled in **deep crimson wine red** (`🍽️ Dining Reservation`).
+- **`status: "recommended"`:** Food markets, bakeries, cafes, or dining ideas, styled in a **lighter, warm coral/terracotta shade** (`🍴 Dining Recommendation`) with `RECOMMENDED` badge.
 
 ### Website Links & Maps Integration
 
@@ -319,7 +325,7 @@ The `type` field accepts:
 | `train` | Amber railway ticket | Rail ticket |
 | `bus` | Amber coach ticket | Bus or coach ticket |
 | `hotel` | Emerald green key card | Hotel or accommodation booking |
-| `restaurant` | Crimson reservation slip | Restaurant reservation |
+| `restaurant` | Crimson (confirmed) / Lighter coral (recommended) | Restaurant reservation or food recommendation |
 | `activity` | **Clean white event ticket** | Event, attraction, tour, or activity |
 | `other` | Slate grey pass | Anything that does not fit another type |
 
