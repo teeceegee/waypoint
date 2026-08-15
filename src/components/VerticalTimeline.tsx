@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { type Pass } from '../db';
+import { getPassTypeStubLabel, normalizePassType } from '../passTypes';
 import { Plane, Hotel, Train, Ticket, Compass, CheckCircle2, Utensils, Bus } from 'lucide-react';
 
 interface VerticalTimelineProps {
@@ -47,7 +48,7 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
   }, [nextRequiredId]);
 
   const getIcon = (type: Pass['type']) => {
-    switch (type) {
+    switch (normalizePassType(type)) {
       case 'flight': return <Plane className="w-5 h-5" />;
       case 'hotel': return <Hotel className="w-5 h-5" />;
       case 'train': return <Train className="w-5 h-5" />;
@@ -61,7 +62,7 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
   const getTicketStyle = (type: Pass['type'], isNext: boolean) => {
     const nextRing = isNext ? 'ring-3 ring-violet-500 ring-offset-4 ring-offset-slate-950 shadow-[0_0_25px_rgba(139,92,246,0.5)] z-10' : '';
 
-    switch (type) {
+    switch (normalizePassType(type)) {
       case 'flight':
         return {
           cardClass: `bg-gradient-to-r from-blue-700 via-sky-850 to-indigo-900 border-sky-500/30 text-white ${nextRing}`,
@@ -209,17 +210,7 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
               {/* Bottom part: Stub (Below the dashed line) */}
               <div className="px-5 py-3 h-14 flex items-center justify-between z-10 bg-black/10">
                 <span className={`text-[10px] uppercase font-black tracking-wider font-mono ${style.textMuted}`}>
-                  {pass.type === 'flight' 
-                    ? '✈️ Boarding Pass' 
-                    : pass.type === 'hotel' 
-                    ? '🏨 Hotel Guest Pass' 
-                    : pass.type === 'restaurant' 
-                    ? '🍽️ Dining Reservation' 
-                    : pass.type === 'train' 
-                    ? '🚄 Railway Ticket' 
-                    : pass.type === 'bus' 
-                    ? '🚌 Transit Ticket' 
-                    : '📁 Travel Document'}
+                  {getPassTypeStubLabel(pass.type)}
                 </span>
                 
                 <div className="flex items-center gap-4 text-xs font-mono">

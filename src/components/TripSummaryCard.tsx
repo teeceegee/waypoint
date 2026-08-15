@@ -1,6 +1,7 @@
 import React from 'react';
 import { type Trip, type Pass } from '../db';
-import { Plane, Hotel, Train, Calendar, MapPin, Ticket, ChevronRight } from 'lucide-react';
+import { normalizePassType } from '../passTypes';
+import { Plane, Hotel, Train, Calendar, MapPin, Ticket, Compass, Utensils, Bus, ChevronRight } from 'lucide-react';
 
 interface TripSummaryCardProps {
   trip: Trip;
@@ -10,10 +11,13 @@ interface TripSummaryCardProps {
 
 export const TripSummaryCard: React.FC<TripSummaryCardProps> = ({ trip, passes, onClick }) => {
   // Count the types of passes
-  const flightCount = passes.filter(p => p.type === 'flight').length;
-  const hotelCount = passes.filter(p => p.type === 'hotel').length;
-  const trainCount = passes.filter(p => p.type === 'train').length;
-  const otherCount = passes.filter(p => p.type !== 'flight' && p.type !== 'hotel' && p.type !== 'train').length;
+  const flightCount = passes.filter(p => normalizePassType(p.type) === 'flight').length;
+  const hotelCount = passes.filter(p => normalizePassType(p.type) === 'hotel').length;
+  const trainCount = passes.filter(p => normalizePassType(p.type) === 'train').length;
+  const busCount = passes.filter(p => normalizePassType(p.type) === 'bus').length;
+  const restaurantCount = passes.filter(p => normalizePassType(p.type) === 'restaurant').length;
+  const activityCount = passes.filter(p => normalizePassType(p.type) === 'activity').length;
+  const otherCount = passes.filter(p => normalizePassType(p.type) === 'other').length;
 
   const formatDateRange = (startStr: string, endStr: string) => {
     try {
@@ -80,10 +84,31 @@ export const TripSummaryCard: React.FC<TripSummaryCardProps> = ({ trip, passes, 
           </div>
         )}
 
+        {busCount > 0 && (
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-950/30 border border-orange-500/20 text-orange-300 text-[11px] font-semibold font-mono">
+            <Bus className="w-3.5 h-3.5" />
+            <span>{busCount} {busCount === 1 ? 'Bus' : 'Buses'}</span>
+          </div>
+        )}
+
+        {restaurantCount > 0 && (
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-950/30 border border-rose-500/20 text-rose-300 text-[11px] font-semibold font-mono">
+            <Utensils className="w-3.5 h-3.5" />
+            <span>{restaurantCount} {restaurantCount === 1 ? 'Dining' : 'Dining'}</span>
+          </div>
+        )}
+
+        {activityCount > 0 && (
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-fuchsia-950/30 border border-fuchsia-500/20 text-fuchsia-300 text-[11px] font-semibold font-mono">
+            <Compass className="w-3.5 h-3.5" />
+            <span>{activityCount} {activityCount === 1 ? 'Activity' : 'Activities'}</span>
+          </div>
+        )}
+
         {otherCount > 0 && (
-          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-950/30 border border-indigo-500/20 text-indigo-300 text-[11px] font-semibold font-mono">
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800/40 border border-white/10 text-slate-300 text-[11px] font-semibold font-mono">
             <Ticket className="w-3.5 h-3.5" />
-            <span>{otherCount} {otherCount === 1 ? 'Item' : 'Items'}</span>
+            <span>{otherCount} {otherCount === 1 ? 'Doc' : 'Docs'}</span>
           </div>
         )}
 

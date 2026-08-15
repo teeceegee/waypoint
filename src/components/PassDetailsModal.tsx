@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { type Pass, db, type Attachment } from '../db';
+import { getPassTypeDisplayName, normalizePassType } from '../passTypes';
 import { BarcodeRenderer } from './BarcodeRenderer';
 import { X, Maximize2, ShieldAlert, FileText, Download, Eye } from 'lucide-react';
 
@@ -99,14 +100,7 @@ export const PassDetailsModal: React.FC<PassDetailsModalProps> = ({
 
 
   const getPassTypeName = () => {
-    switch (pass.type) {
-      case 'flight': return 'Flight Boarding Pass';
-      case 'hotel': return 'Accommodation Reservation';
-      case 'train': return 'Train Ticket';
-      case 'restaurant': return 'Restaurant Reservation';
-      case 'activity': return 'Activity Pass';
-      default: return 'Travel Document';
-    }
+    return getPassTypeDisplayName(pass.type);
   };
 
   const formatDate = (dateStr: string) => {
@@ -123,7 +117,7 @@ export const PassDetailsModal: React.FC<PassDetailsModalProps> = ({
   };
 
   const getModalStyle = () => {
-    switch (pass.type) {
+    switch (normalizePassType(pass.type)) {
       case 'flight':
         return {
           containerBg: 'bg-gradient-to-br from-blue-700 via-sky-850 to-indigo-900 text-white border-sky-400/30',

@@ -1,5 +1,6 @@
 import React from 'react';
 import { type Pass } from '../db';
+import { normalizePassType } from '../passTypes';
 import { Plane, Hotel, Train, Calendar, Ticket, Compass, Utensils, Bus } from 'lucide-react';
 
 interface PassCardProps {
@@ -9,7 +10,7 @@ interface PassCardProps {
 
 export const PassCard: React.FC<PassCardProps> = ({ pass, onClick }) => {
   const getIcon = () => {
-    switch (pass.type) {
+    switch (normalizePassType(pass.type)) {
       case 'flight': return <Plane className="w-5 h-5" />;
       case 'hotel': return <Hotel className="w-5 h-5" />;
       case 'train': return <Train className="w-5 h-5" />;
@@ -21,7 +22,7 @@ export const PassCard: React.FC<PassCardProps> = ({ pass, onClick }) => {
   };
 
   const getTicketStyle = (type: Pass['type']) => {
-    switch (type) {
+    switch (normalizePassType(type)) {
       case 'flight':
         return {
           cardClass: 'bg-gradient-to-r from-blue-700 via-sky-850 to-indigo-900 border-sky-500/30 text-white',

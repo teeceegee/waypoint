@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { db, type Attachment, type Trip, type Pass } from '../db';
+import { normalizePassType } from '../passTypes';
 import {
   assertTravelerLimit,
   getTravelerIds,
@@ -163,6 +164,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({
       }));
       const normalizedPasses = passes.map((pass: Pass) => ({
         ...pass,
+        type: normalizePassType(pass.type),
         travelerId: normalizeTravelerId(pass.travelerId),
       }));
       const importedTravelerIds = getTravelerIds(normalizedTrips, normalizedPasses);
@@ -343,6 +345,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({
               const mergedPass = {
                 ...existingPass,
                 ...updateData,
+                type: updateData.type ? normalizePassType(updateData.type) : existingPass.type,
                 travelerId:
                   updateData.travelerId || existingPass.travelerId || SHARED_TRAVELER_ID,
               };
@@ -370,6 +373,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({
 
               const passToAdd: Pass = {
                 ...(newData as Pass),
+                type: normalizePassType(newData.type),
                 tripId: matchedTrip.id,
                 travelerId: newData.travelerId || SHARED_TRAVELER_ID,
               };
