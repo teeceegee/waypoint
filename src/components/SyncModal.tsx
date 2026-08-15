@@ -7,6 +7,7 @@ import {
   normalizeTravelerId,
   SHARED_TRAVELER_ID,
 } from '../travelers';
+import { APP_VERSION } from '../version';
 import { X, Download, Upload, Clipboard, Check, RefreshCw } from 'lucide-react';
 
 interface SyncModalProps {
@@ -467,7 +468,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({
         <div className="flex items-center justify-between p-5 border-b border-white/5 bg-slate-950/40">
           <div>
             <h3 className="text-lg font-bold text-slate-100">Backup & Incremental Sync</h3>
-            <p className="text-[10px] text-slate-500 font-mono mt-0.5">Local-first Data Portability</p>
+            <p className="text-[10px] text-slate-500 font-mono mt-0.5">Local-first Data Portability • v{APP_VERSION}</p>
           </div>
           <button
             onClick={onClose}

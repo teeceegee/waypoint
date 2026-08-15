@@ -7,6 +7,7 @@ import { VerticalTimeline } from './components/VerticalTimeline';
 import { SyncModal } from './components/SyncModal';
 import { TravelerSelectionModal } from './components/TravelerSelectionModal';
 import { formatTravelerId, getTravelerIds, SHARED_TRAVELER_ID } from './travelers';
+import { APP_VERSION } from './version';
 import { Database, Calendar, MapPin, ArrowLeft } from 'lucide-react';
 
 const SELECTED_TRAVELER_STORAGE_KEY = 'waypoint:selectedTravelerId';
@@ -115,7 +116,7 @@ export default function App() {
               Waypoint
             </span>
             <span className="text-[9px] text-slate-400 tracking-wider font-mono mt-0.5">
-              SHARED TRAVEL WALLET
+              SHARED TRAVEL WALLET v{APP_VERSION}
             </span>
           </div>
         </div>
