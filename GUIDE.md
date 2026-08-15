@@ -209,6 +209,7 @@ Traveller selection is a display filter, not an account, sign-in, or access-cont
       "date": "2026-09-01",
       "time": "08:00",
       "location": "London Heathrow Terminal 5",
+      "mapsUrl": "https://maps.apple.com/?q=London+Heathrow+Terminal+5",
       "seat": "12A",
       "confirmationCode": "XYZABC",
       "barcodeType": "pdf417",

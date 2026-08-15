@@ -298,9 +298,19 @@ For `action: "delete"`, only `action` and `slug` are needed.
 | `barcodeType` | Yes | `aztec`, `pdf417`, `qr`, `code128`, or `none` | Barcode format |
 | `barcodeContent` | No | Exact text | Raw data encoded in the barcode |
 | `notes` | No | Text | Additional instructions |
+| `mapsUrl` | No | URL | Apple Maps or Google Maps link for the destination |
 | `attachment` | No | Object | Embedded PDF or image |
 
 For a pass with no barcode, set `"barcodeType": "none"` and omit `barcodeContent`.
+
+### Apple Maps & Google Maps integration (`mapsUrl`)
+
+You can provide an Apple Maps (`https://maps.apple.com/?q=...`) or Google Maps URL in the `mapsUrl` field for any activity, hotel, dining reservation, or transit destination. 
+
+Waypoint is **OS-aware**:
+- On **Apple devices (iPhone, iPad, Mac)**, tapping the map shortcut opens **Apple Maps**.
+- On **Android / Windows / other devices**, Apple Maps links are automatically adapted to launch **Google Maps**.
+- If `mapsUrl` is omitted, Waypoint dynamically generates a map search link from the text in the `location` field.
 
 ### Pass types
 

@@ -30,6 +30,7 @@ export interface Pass {
   barcodeType: 'aztec' | 'pdf417' | 'qr' | 'code128' | 'none';
   barcodeContent?: string;
   notes?: string;
+  mapsUrl?: string; // Deep link to Apple Maps or Google Maps
   attachmentId?: number; // Linked attachment in the attachments table
 }
 

@@ -48,6 +48,7 @@ The system will automatically decode the base64 data and store it offline in Ind
       "barcodeType": "aztec" | "pdf417" | "qr" | "code128" | "none" (required for new),
       "barcodeContent": "string (optional, raw barcode payload)",
       "notes": "string (optional)",
+      "mapsUrl": "string (optional, Apple Maps or Google Maps URL, e.g. 'https://maps.apple.com/?q=Freyja+Hornsgatan+18+Stockholm')",
       "attachment": {
         "fileName": "string (e.g. 'pass.pdf')",
         "fileType": "string (e.g. 'application/pdf' or 'image/png')",
@@ -58,28 +59,49 @@ The system will automatically decode the base64 data and store it offline in Ind
 }
 ```
 
+### Apple Maps & Google Maps Deep Linking (`mapsUrl`)
+Any pass (activity, dining reservation, hotel, transit, etc.) can include a `mapsUrl` field.
+Waypoint is OS-aware:
+- On **iOS / iPadOS / macOS**, tapping the map button automatically opens **Apple Maps**.
+- On **Android / Windows / Linux**, Apple Maps queries are automatically adapted to open seamlessly in **Google Maps**.
+- If `mapsUrl` is omitted, Waypoint automatically generates a search link using the `location` field.
+
 ---
 
 ## 🤖 Gmail Scraper & LLM Integration Guide
 
-If you are using an LLM or script to scan a traveler's Gmail inbox for barcodes and confirmation documents, follow these steps to generate the sync file:
+If you are using an LLM or script to scan a traveler's Gmail inbox for barcodes, confirmation documents, and location addresses, follow these steps to generate the sync file:
 
 1.  **Search & Match:**
     *   Find the relevant email in Gmail by searching for the flight number, hotel name, or travel dates.
     *   Locate the pass in the Waypoint app by matching the `confirmationCode` (e.g. `ZYLQQY`), `date`, or `title`.
-2.  **Extract the Barcode:**
+2.  **Extract the Barcode & Location Maps:**
     *   Scan the email body or attachments for barcode patterns (Aztec, PDF417, or QR codes).
     *   Extract the raw text string containing the barcode payload (e.g. the standard IATA BCBP string for flights).
+    *   Extract destination addresses and format as an Apple Maps / Google Maps URL in `mapsUrl`.
 3.  **Extract Attachments:**
     *   If the email contains a PDF ticket or image boarding pass, extract the file, convert it to a base64 Data URL, and set the `attachment` fields.
 4.  **Format the Incremental Update:**
-    *   Write an incremental JSON update containing **only** the target pass's `slug` (or search terms) and the extracted barcode/attachment fields. You do **not** need to respecify unchanged metadata.
+    *   Write an incremental JSON update containing **only** the target pass's `slug` (or search terms) and the extracted barcode/attachment/maps fields. You do **not** need to respecify unchanged metadata.
 
 ---
 
 ## 💡 Examples
 
-### Example 1: Gmail Scraper Adds Barcode & PDF (Incremental Update)
+### Example 1: Adding a Maps URL & Barcode to an Activity or Restaurant
+```json
+{
+  "passes": [
+    {
+      "action": "upsert",
+      "slug": "pass-restaurant-freyja-soder",
+      "mapsUrl": "https://maps.apple.com/?q=Freyja+Hornsgatan+18+Stockholm"
+    }
+  ]
+}
+```
+
+### Example 2: Gmail Scraper Adds Barcode & PDF (Incremental Update)
 If you found the barcode string and PDF attachment for an existing flight pass `pass-flight-cph-passenger-1` (Reference `ZYLQQY`):
 
 ```json
@@ -100,45 +122,47 @@ If you found the barcode string and PDF attachment for an existing flight pass `
 }
 ```
 
-### Example 2: Creating a New Trip with a Boarding Pass
+### Example 3: Creating a New Trip with an Activity Pass & Maps Link
 ```json
 {
   "trips": [
     {
       "action": "upsert",
-      "slug": "trip-tokyo-2026",
-      "name": "Summer Voyage to Tokyo",
-      "destination": "Tokyo, Japan",
-      "startDate": "2026-08-10",
-      "endDate": "2026-08-23",
-      "description": "First joint trip to Japan!"
+      "slug": "trip-stockholm-2026",
+      "name": "Nordic Getaway in Stockholm",
+      "destination": "Stockholm, Sweden",
+      "startDate": "2026-09-12",
+      "endDate": "2026-09-16",
+      "description": "Exploration of Gamla Stan and culinary hotspots"
     }
   ],
   "passes": [
     {
       "action": "upsert",
-      "slug": "pass-flight-jl042-passenger-1",
-      "tripSlug": "trip-tokyo-2026",
-      "title": "Flight JL042: LHR ➔ HND — Passenger 1",
-      "type": "flight",
-      "travelerId": "passenger-1",
-      "date": "2026-08-10",
-      "time": "09:40",
-      "location": "London Heathrow (LHR) Terminal 3",
-      "barcodeType": "pdf417",
-      "barcodeContent": "M1ME/PASSENGER..."
+      "slug": "pass-activity-vasa-museum",
+      "tripSlug": "trip-stockholm-2026",
+      "title": "Vasa Museum Guided Tour",
+      "type": "activity",
+      "travelerId": "shared",
+      "date": "2026-09-13",
+      "time": "11:00",
+      "location": "Galärvarvsvägen 14, 115 21 Stockholm",
+      "mapsUrl": "https://maps.apple.com/?q=Vasa+Museum+Galarvarvsvagen+14+Stockholm",
+      "confirmationCode": "VASA-9942",
+      "barcodeType": "qr",
+      "barcodeContent": "https://vasamuseet.se/tickets/VASA-9942"
     }
   ]
 }
 ```
 
-### Example 3: Deleting a Pass
+### Example 4: Deleting a Pass
 ```json
 {
   "passes": [
     {
       "action": "delete",
-      "slug": "pass-flight-jl042-passenger-1"
+      "slug": "pass-activity-vasa-museum"
     }
   ]
 }

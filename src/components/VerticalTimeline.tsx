@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { type Pass } from '../db';
 import { getPassTypeStubLabel, normalizePassType } from '../passTypes';
-import { Plane, Hotel, Train, Ticket, Compass, CheckCircle2, Utensils, Bus } from 'lucide-react';
+import { getSmartMapsUrl, getMapsServiceName } from '../maps';
+import { Plane, Hotel, Train, Ticket, Compass, CheckCircle2, Utensils, Bus, MapPin } from 'lucide-react';
 
 interface VerticalTimelineProps {
   passes: Pass[];
@@ -197,7 +198,22 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
                     <h4 className={`text-base sm:text-lg font-bold leading-tight ${style.textBold}`}>
                       {pass.title}
                     </h4>
-                    <p className={`text-xs mt-0.5 font-medium ${style.textMuted}`}>{pass.location}</p>
+                    <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                      <p className={`text-xs font-medium ${style.textMuted}`}>{pass.location}</p>
+                      {getSmartMapsUrl(pass.mapsUrl, pass.location) && (
+                        <a
+                          href={getSmartMapsUrl(pass.mapsUrl, pass.location)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold border transition ${style.badgeClass} hover:opacity-100 opacity-85`}
+                          title={`Open in ${getMapsServiceName()}`}
+                        >
+                          <MapPin className="w-2.5 h-2.5" />
+                          <span>Map</span>
+                        </a>
+                      )}
+                    </div>
                   </div>
                   
                   {/* Decorative watermarked type icon inside card */}

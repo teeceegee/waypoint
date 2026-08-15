@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { type Pass, db, type Attachment } from '../db';
 import { getPassTypeDisplayName, normalizePassType } from '../passTypes';
+import { getSmartMapsUrl, getMapsServiceName } from '../maps';
 import { BarcodeRenderer } from './BarcodeRenderer';
-import { X, Maximize2, ShieldAlert, FileText, Download, Eye } from 'lucide-react';
+import { X, Maximize2, ShieldAlert, FileText, Download, Eye, MapPin, ExternalLink } from 'lucide-react';
 
 interface PassDetailsModalProps {
   pass: Pass;
@@ -350,8 +351,23 @@ export const PassDetailsModal: React.FC<PassDetailsModalProps> = ({
               )}
 
               <div className="col-span-2">
-                <span className={`text-[9px] uppercase block font-mono tracking-wider ${modalStyle.labelText}`}>Location</span>
-                <span className={`text-xs font-semibold ${modalStyle.valueText}`}>{pass.location}</span>
+                <div className="flex items-center justify-between mb-1">
+                  <span className={`text-[9px] uppercase block font-mono tracking-wider ${modalStyle.labelText}`}>Location</span>
+                  {getSmartMapsUrl(pass.mapsUrl, pass.location) && (
+                    <a
+                      href={getSmartMapsUrl(pass.mapsUrl, pass.location)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold border transition ${modalStyle.btnClass} bg-black/15 border-white/10`}
+                      title={`Open in ${getMapsServiceName()}`}
+                    >
+                      <MapPin className="w-3.5 h-3.5 text-violet-400" />
+                      <span>{getMapsServiceName()}</span>
+                      <ExternalLink className="w-3 h-3 opacity-60" />
+                    </a>
+                  )}
+                </div>
+                <span className={`text-xs font-semibold block ${modalStyle.valueText}`}>{pass.location}</span>
               </div>
 
               <div>
