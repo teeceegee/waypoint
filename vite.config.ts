@@ -75,5 +75,19 @@ export default defineConfig({
         enabled: true
       }
     })
-  ]
+  ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes('bwip-js')) {
+            return 'vendor-barcode';
+          }
+          if (id.includes('dexie')) {
+            return 'vendor-db';
+          }
+        },
+      },
+    },
+  },
 })

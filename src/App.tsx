@@ -1,14 +1,19 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Pass } from './db';
-import { PassDetailsModal } from './components/PassDetailsModal';
 import { TripSummaryCard } from './components/TripSummaryCard';
 import { VerticalTimeline } from './components/VerticalTimeline';
-import { SyncModal } from './components/SyncModal';
 import { TravelerSelectionModal } from './components/TravelerSelectionModal';
 import { formatTravelerId, getTravelerIds, SHARED_TRAVELER_ID } from './travelers';
 import { APP_VERSION } from './version';
 import { Database, Calendar, MapPin, ArrowLeft } from 'lucide-react';
+
+const PassDetailsModal = lazy(() =>
+  import('./components/PassDetailsModal').then((m) => ({ default: m.PassDetailsModal }))
+);
+const SyncModal = lazy(() =>
+  import('./components/SyncModal').then((m) => ({ default: m.SyncModal }))
+);
 
 const SELECTED_TRAVELER_STORAGE_KEY = 'waypoint:selectedTravelerId';
 
@@ -212,23 +217,24 @@ export default function App() {
       </main>
 
       {/* --- ALL DYNAMIC OVERLAY MODALS --- */}
+      <Suspense fallback={null}>
+        {/* 1. Ticket Details / Barcode Viewer Modal */}
+        {selectedPass && (
+          <PassDetailsModal
+            pass={selectedPass}
+            onClose={() => setSelectedPass(null)}
+          />
+        )}
 
-      {/* 1. Ticket Details / Barcode Viewer Modal */}
-      {selectedPass && (
-        <PassDetailsModal
-          pass={selectedPass}
-          onClose={() => setSelectedPass(null)}
-        />
-      )}
-
-      {/* 2. Sync Modal (Backup & Restore) */}
-      {showSyncModal && (
-        <SyncModal
-          onClose={() => setShowSyncModal(false)}
-          onImportComplete={handleImportComplete}
-          onDataCleared={handleDataCleared}
-        />
-      )}
+        {/* 2. Sync Modal (Backup & Restore) */}
+        {showSyncModal && (
+          <SyncModal
+            onClose={() => setShowSyncModal(false)}
+            onImportComplete={handleImportComplete}
+            onDataCleared={handleDataCleared}
+          />
+        )}
+      </Suspense>
 
       {showTravelerSelection && travelerSelectionOptions.length > 0 && (
         <TravelerSelectionModal
