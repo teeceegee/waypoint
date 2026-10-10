@@ -85,3 +85,4 @@ This document serves as the operational reference and codebase guide for AI agen
   * Released v2.3.1 and deployed to GitHub Pages (`teeceegee.github.io/waypoint`).
   * Implemented 3-tier navigation hierarchy on Level 2 timeline: preserved confirmed/booked items (flights, hotels, transit, confirmed bookings) on the primary timeline while consolidating daily dining recommendations and activity suggestions behind expandable day accordion summary cards (Level 3 drill-down).
   * Released v2.4.0 with Workbox `skipWaiting`, `clientsClaim`, and tap-to-update header mechanism for instant PWA version activation.
+  * Released v2.4.1: Ensured planned/unbooked flights remain directly on the Level 2 master timeline alongside confirmed travel items, rendered in a distinct lighter sky-blue gradient (`from-sky-500 via-sky-600 to-blue-600`) with `✈️ Planned Flight` status labels to visually distinguish planned sectors from booked boarding passes.

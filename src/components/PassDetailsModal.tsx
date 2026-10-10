@@ -120,6 +120,19 @@ export const PassDetailsModal: React.FC<PassDetailsModalProps> = ({
   const getModalStyle = () => {
     switch (normalizePassType(pass.type)) {
       case 'flight':
+        if (pass.status === 'recommended' || pass.status === 'planned') {
+          return {
+            containerBg: 'bg-gradient-to-br from-sky-500 via-sky-600 to-blue-600 text-white border-sky-300/40 shadow-2xl',
+            headerBg: 'border-b border-white/15 bg-black/10',
+            titleText: 'text-white font-black',
+            subtitleText: 'text-sky-100 font-medium',
+            labelText: 'text-sky-100/80',
+            valueText: 'text-white',
+            cardBg: 'bg-black/15 border border-white/10',
+            btnClass: 'text-white/80 hover:text-white hover:bg-white/10',
+            deleteBtnClass: 'text-red-200 hover:text-white hover:bg-red-500/20'
+          };
+        }
         return {
           containerBg: 'bg-gradient-to-br from-blue-700 via-sky-850 to-indigo-900 text-white border-sky-400/30',
           headerBg: 'border-b border-white/10 bg-black/10',

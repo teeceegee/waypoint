@@ -91,7 +91,7 @@ export const getPassTypeDisplayName = (type: PassType, status?: string): string 
   const normalized = normalizePassType(type);
   switch (normalized) {
     case 'flight':
-      return 'Flight Boarding Pass';
+      return status === 'recommended' || status === 'planned' ? 'Planned Flight' : 'Flight Boarding Pass';
     case 'hotel':
       return status === 'recommended' ? 'Recommended Hotel' : 'Accommodation Reservation';
     case 'train':
@@ -111,7 +111,7 @@ export const getPassTypeStubLabel = (type: PassType, status?: string): string =>
   const normalized = normalizePassType(type);
   switch (normalized) {
     case 'flight':
-      return '✈️ Boarding Pass';
+      return status === 'recommended' || status === 'planned' ? '✈️ Planned Flight' : '✈️ Boarding Pass';
     case 'hotel':
       return status === 'recommended' ? '🏨 Hotel Idea' : '🏨 Hotel Guest Pass';
     case 'restaurant':
@@ -141,8 +141,13 @@ export interface PassLike {
 export const isBookedPass = (pass: PassLike): boolean => {
   const normType = normalizePassType(pass.type);
 
-  // Transportation and lodging are booked by default unless explicitly marked as a suggestion
-  if (normType === 'flight' || normType === 'hotel' || normType === 'train' || normType === 'bus') {
+  // Planned flights stay on the Level 2 master timeline
+  if (normType === 'flight') {
+    return true;
+  }
+
+  // Other transportation and lodging are booked by default unless explicitly marked as a suggestion
+  if (normType === 'hotel' || normType === 'train' || normType === 'bus') {
     return pass.status !== 'recommended' && pass.status !== 'optional';
   }
 

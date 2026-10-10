@@ -146,6 +146,17 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
 
     switch (normalizePassType(type)) {
       case 'flight':
+        if (status === 'recommended' || status === 'planned') {
+          return {
+            cardClass: `bg-gradient-to-r from-sky-500 via-sky-600 to-blue-600 border-sky-300/40 text-white shadow-lg ${nextRing}`,
+            punchClass: 'bg-slate-950 border-sky-400/30',
+            dashClass: 'border-sky-200/40',
+            badgeClass: 'bg-white/20 text-sky-100 border-white/20 font-bold',
+            textMuted: 'text-sky-100 font-medium',
+            textBold: 'text-white font-extrabold',
+            iconBg: 'bg-white/20 text-white border-white/20'
+          };
+        }
         return {
           cardClass: `bg-gradient-to-r from-blue-700 via-sky-850 to-indigo-900 border-sky-500/30 text-white ${nextRing}`,
           punchClass: 'bg-slate-950 border-sky-500/20',
