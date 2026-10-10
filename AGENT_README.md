@@ -84,3 +84,4 @@ This document serves as the operational reference and codebase guide for AI agen
   * Authored and published Confluence Live Document `Waypoint: JSON Synchronization & Backup Schema` (ID: `26738690`) under parent `Waypoint App Overview` (`589826`).
   * Released v2.3.1 and deployed to GitHub Pages (`teeceegee.github.io/waypoint`).
   * Implemented 3-tier navigation hierarchy on Level 2 timeline: preserved confirmed/booked items (flights, hotels, transit, confirmed bookings) on the primary timeline while consolidating daily dining recommendations and activity suggestions behind expandable day accordion summary cards (Level 3 drill-down).
+  * Released v2.4.0 with Workbox `skipWaiting`, `clientsClaim`, and tap-to-update header mechanism for instant PWA version activation.
