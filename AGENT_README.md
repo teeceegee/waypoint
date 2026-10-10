@@ -82,3 +82,4 @@ This document serves as the operational reference and codebase guide for AI agen
   * Added `dev-dist` and macOS `Icon\r` patterns to `.gitignore` and `.oxlintrc.json`, achieving clean 0-warning lint runs in ~18ms.
   * Verified build pipeline (`tsc -b && vite build`) and offline PWA precaching across all 18 chunk assets.
   * Authored and published Confluence Live Document `Waypoint: JSON Synchronization & Backup Schema` (ID: `26738690`) under parent `Waypoint App Overview` (`589826`).
+  * Released v2.3.1 and deployed to GitHub Pages (`teeceegee.github.io/waypoint`).
