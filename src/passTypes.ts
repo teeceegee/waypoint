@@ -126,3 +126,45 @@ export const getPassTypeStubLabel = (type: PassType, status?: string): string =>
       return '📁 Travel Document';
   }
 };
+
+export interface PassLike {
+  type: unknown;
+  status?: string;
+  confirmationCode?: string;
+  barcodeType?: string;
+}
+
+/**
+ * Determines whether a pass represents a confirmed/booked item (Level 2)
+ * or a flexible suggestion/recommendation (Level 3 day accordion).
+ */
+export const isBookedPass = (pass: PassLike): boolean => {
+  const normType = normalizePassType(pass.type);
+
+  // Transportation and lodging are booked by default unless explicitly marked as a suggestion
+  if (normType === 'flight' || normType === 'hotel' || normType === 'train' || normType === 'bus') {
+    return pass.status !== 'recommended' && pass.status !== 'optional';
+  }
+
+  // Restaurant: booked if confirmed or has a booking reference
+  if (normType === 'restaurant') {
+    if (pass.status === 'confirmed') return true;
+    if (pass.confirmationCode && pass.confirmationCode.trim().length > 0) return true;
+    return false;
+  }
+
+  // Activity: booked if confirmed, has a booking code, or has an active barcode ticket
+  if (normType === 'activity') {
+    if (pass.status === 'confirmed') return true;
+    if (pass.confirmationCode && pass.confirmationCode.trim().length > 0) return true;
+    if (pass.barcodeType && pass.barcodeType !== 'none') return true;
+    return false;
+  }
+
+  // Other travel documents
+  if (pass.status === 'recommended' || pass.status === 'optional') {
+    return false;
+  }
+  return true;
+};
+
