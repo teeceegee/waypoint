@@ -120,9 +120,22 @@ export default function App() {
             <span className="text-xl font-black text-slate-100 uppercase tracking-tight">
               Waypoint
             </span>
-            <span className="text-[9px] text-slate-400 tracking-wider font-mono mt-0.5">
+            <button
+              onClick={() => {
+                if ('serviceWorker' in navigator) {
+                  navigator.serviceWorker.getRegistrations().then((registrations) => {
+                    for (const reg of registrations) {
+                      reg.update();
+                    }
+                  });
+                }
+                window.location.reload();
+              }}
+              title="Click to check for updates & reload"
+              className="text-[9px] text-slate-400 hover:text-slate-200 tracking-wider font-mono mt-0.5 text-left transition cursor-pointer"
+            >
               SHARED TRAVEL WALLET v{APP_VERSION}
-            </span>
+            </button>
           </div>
         </div>
 
