@@ -57,6 +57,7 @@ This document serves as the operational reference and codebase guide for AI agen
 ### Confluence Pages
 * **User Guide**: [Waypoint User Guide](https://echopost.atlassian.net/wiki/spaces/~71202051b19675b2e64a71ac2b1d79eb01b1f7/pages/295176/Waypoint+User+Guide) (ID: `295176`)
 * **App Overview**: [Waypoint App Overview](https://echopost.atlassian.net/wiki/spaces/~71202051b19675b2e64a71ac2b1d79eb01b1f7/pages/589826/Waypoint+App+Overview) (ID: `589826`)
+* **JSON Sync & Backup Schema**: [Waypoint: JSON Synchronization & Backup Schema](https://echopost.atlassian.net/wiki/spaces/~71202051b19675b2e64a71ac2b1d79eb01b1f7/pages/26738690/Waypoint+JSON+Synchronization+Backup+Schema) (ID: `26738690`)
 * **Architecture History**: [From Idea to Installed App: Building a PWA with Codex in the ChatGPT Desktop App](https://echopost.atlassian.net/wiki/spaces/~71202051b19675b2e64a71ac2b1d79eb01b1f7/pages/524289) (ID: `524289`)
 
 ### Jira Issues
@@ -80,3 +81,4 @@ This document serves as the operational reference and codebase guide for AI agen
   * Removed deprecated empty stub components (`PassFormModal.tsx`, `TripFormModal.tsx`).
   * Added `dev-dist` and macOS `Icon\r` patterns to `.gitignore` and `.oxlintrc.json`, achieving clean 0-warning lint runs in ~18ms.
   * Verified build pipeline (`tsc -b && vite build`) and offline PWA precaching across all 18 chunk assets.
+  * Authored and published Confluence Live Document `Waypoint: JSON Synchronization & Backup Schema` (ID: `26738690`) under parent `Waypoint App Overview` (`589826`).
