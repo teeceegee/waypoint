@@ -61,8 +61,14 @@ This document serves as the operational reference and codebase guide for AI agen
 * **Architecture History**: [From Idea to Installed App: Building a PWA with Codex in the ChatGPT Desktop App](https://echopost.atlassian.net/wiki/spaces/~71202051b19675b2e64a71ac2b1d79eb01b1f7/pages/524289) (ID: `524289`)
 
 ### Jira Issues
-* Tracked under **Everyday (`EVD`)** project for feature roadmaps and travel tooling (see [`JIRA_TICKETS.md`](file:///Volumes/NeosDrive/08_Tech,%20Dev%20&%20AI/AI/Gemini/AntiGravity/waypoint/JIRA_TICKETS.md)):
+* Tracked under **Everyday (`EVD`)** project under parent Epic [EVD-76](https://echopost.atlassian.net/browse/EVD-76) (*Waypoint PWA: Architecture, UI & Code Quality Roadmap*) — see [`JIRA_TICKETS.md`](file:///Volumes/NeosDrive/08_Tech,%20Dev%20&%20AI/AI/Gemini/AntiGravity/waypoint/JIRA_TICKETS.md):
   * [EVD-75](https://echopost.atlassian.net/browse/EVD-75) — *Waypoint PWA v2.4–v2.5: 3-Tier Daily Suggestion Accordions, Category Filter Toggles & Bundle Splitting* (**Done**)
+  * [EVD-77](https://echopost.atlassian.net/browse/EVD-77) — *Waypoint: Fix UTC vs. Local Timezone Shift When Parsing YYYY-MM-DD Dates* (**To Do**, High)
+  * [EVD-78](https://echopost.atlassian.net/browse/EVD-78) — *Waypoint: Reset Timeline Category Filters & Auto-Scroll State When Switching Trips* (**To Do**, Medium)
+  * [EVD-79](https://echopost.atlassian.net/browse/EVD-79) — *Waypoint: Align Level 1 Trip Summary Counts with Level 2 Booked vs. Suggestion Categories* (**To Do**, Medium)
+  * [EVD-80](https://echopost.atlassian.net/browse/EVD-80) — *Waypoint: Refactor SyncModal Database Cleanup, Export Helper & Inline Status Feedback* (**To Do**, Medium)
+  * [EVD-81](https://echopost.atlassian.net/browse/EVD-81) — *Waypoint: Modularize VerticalTimeline.tsx & Centralize Pass Card/Modal Theme Tokens* (**To Do**, Medium)
+  * [EVD-82](https://echopost.atlassian.net/browse/EVD-82) — *Waypoint: Sanitize External URL Schemes in Maps & Website Links* (**To Do**, Low)
 
 ---
 
@@ -89,4 +95,4 @@ This document serves as the operational reference and codebase guide for AI agen
   * Released v2.4.1: Ensured planned/unbooked flights remain directly on the Level 2 master timeline alongside confirmed travel items, rendered in a distinct lighter sky-blue gradient (`from-sky-500 via-sky-600 to-blue-600`) with `✈️ Planned Flight` status labels to visually distinguish planned sectors from booked boarding passes.
 * **2026-10-11**:
   * Released v2.5.0 & v2.5.1: Added interactive category filter toggle pills (**Flights**, **Hotels**, **Restaurant Bookings**, and **Activities / Suggestions**) directly inside the non-scrollable sticky top `<header>` bar (`TimelineFilterBar`), displaying compact dual-state SVG icons (solid filled when selected, outlined stroke when unselected) and item counts colour-matched to each card category's gradient palette.
-  * Recorded and closed Jira ticket [EVD-75](https://echopost.atlassian.net/browse/EVD-75).
+  * Recorded and closed Jira ticket [EVD-75](https://echopost.atlassian.net/browse/EVD-75) and created parent Epic [EVD-76](https://echopost.atlassian.net/browse/EVD-76) with linked backlog tickets [EVD-77](https://echopost.atlassian.net/browse/EVD-77) through [EVD-82](https://echopost.atlassian.net/browse/EVD-82) from the v2.5.1 code critique.
