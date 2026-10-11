@@ -10,6 +10,7 @@ import {
 } from './components/VerticalTimeline';
 import { TravelerSelectionModal } from './components/TravelerSelectionModal';
 import { formatTravelerId, getTravelerIds, SHARED_TRAVELER_ID } from './travelers';
+import { formatDateRange } from './dates';
 import { APP_VERSION } from './version';
 import { Database, Calendar, MapPin, ArrowLeft } from 'lucide-react';
 
@@ -224,7 +225,9 @@ export default function App() {
                   <MapPin className="w-4.5 h-4.5 text-slate-400" />
                   {currentSelectedTrip.name}
                 </h2>
-                <p className="text-xs text-slate-400 mt-1">{currentSelectedTrip.startDate} to {currentSelectedTrip.endDate}</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  {formatDateRange(currentSelectedTrip.startDate, currentSelectedTrip.endDate)}
+                </p>
                 {currentSelectedTrip.description && (
                   <p className="text-xs text-slate-400 italic mt-2">{currentSelectedTrip.description}</p>
                 )}

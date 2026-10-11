@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { type Pass } from '../db';
 import { getPassTypeStubLabel, normalizePassType, isBookedPass } from '../passTypes';
+import { parseLocalDate, formatShortDate } from '../dates';
 import { getSmartMapsUrl, getMapsServiceName } from '../maps';
 import {
   Plane,
@@ -262,7 +263,7 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({
 
     for (const pass of passes) {
       if (isBookedPass(pass)) {
-        const timestamp = new Date(`${pass.date}T${pass.time || '00:00'}`).getTime();
+        const timestamp = parseLocalDate(pass.date, pass.time || '00:00').getTime();
         bookedEntries.push({
           kind: 'booked',
           key: `pass-${pass.id || pass.slug}`,
@@ -283,7 +284,7 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({
 
       // Position the day summary card at the earliest suggestion time, or midday (12:00) if none
       const earliestTime = dayPasses.find((p) => p.time)?.time || '12:00';
-      const timestamp = new Date(`${date}T${earliestTime}`).getTime();
+      const timestamp = parseLocalDate(date, earliestTime).getTime();
 
       suggestionEntries.push({
         kind: 'day_suggestions',
@@ -329,7 +330,7 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({
         return entry.timestamp + duration >= now;
       } else {
         // Suggestion day card: valid until the end of that day (23:59:59)
-        const endOfDay = new Date(`${entry.date}T23:59:59`).getTime();
+        const endOfDay = parseLocalDate(entry.date, '23:59:59').getTime();
         return endOfDay >= now;
       }
     });
@@ -453,14 +454,7 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    try {
-      const options: Intl.DateTimeFormatOptions = { weekday: 'short', month: 'short', day: 'numeric' };
-      return new Date(dateStr).toLocaleDateString('en-US', options);
-    } catch {
-      return dateStr;
-    }
-  };
+  const formatDate = formatShortDate;
 
   return (
     <div className="space-y-6">
@@ -488,7 +482,7 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({
         if (entry.kind === 'booked') {
           const pass = entry.pass;
           const style = getTicketStyle(pass.type, isNext, pass.status);
-          const isPast = !isNext && new Date(`${pass.date}T${pass.time || '00:00'}`).getTime() < new Date().getTime();
+          const isPast = !isNext && entry.timestamp < new Date().getTime();
 
           return (
             <div
@@ -626,7 +620,7 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({
           (p) => normalizePassType(p.type) !== 'restaurant' && normalizePassType(p.type) !== 'activity'
         );
 
-        const endOfDayTimestamp = new Date(`${entry.date}T23:59:59`).getTime();
+        const endOfDayTimestamp = parseLocalDate(entry.date, '23:59:59').getTime();
         const isPastDay = endOfDayTimestamp < new Date().getTime();
 
         return (

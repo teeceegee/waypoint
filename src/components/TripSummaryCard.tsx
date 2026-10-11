@@ -1,6 +1,7 @@
 import React from 'react';
 import { type Trip, type Pass } from '../db';
 import { normalizePassType } from '../passTypes';
+import { formatDateRange } from '../dates';
 import { Plane, Hotel, Train, Calendar, MapPin, Ticket, Compass, Utensils, Bus, ChevronRight } from 'lucide-react';
 
 interface TripSummaryCardProps {
@@ -18,17 +19,6 @@ export const TripSummaryCard: React.FC<TripSummaryCardProps> = ({ trip, passes, 
   const restaurantCount = passes.filter(p => normalizePassType(p.type) === 'restaurant').length;
   const activityCount = passes.filter(p => normalizePassType(p.type) === 'activity').length;
   const otherCount = passes.filter(p => normalizePassType(p.type) === 'other').length;
-
-  const formatDateRange = (startStr: string, endStr: string) => {
-    try {
-      const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
-      const start = new Date(startStr).toLocaleDateString('en-US', options);
-      const end = new Date(endStr).toLocaleDateString('en-US', options);
-      return `${start} - ${end}`;
-    } catch {
-      return `${startStr} - ${endStr}`;
-    }
-  };
 
   return (
     <div

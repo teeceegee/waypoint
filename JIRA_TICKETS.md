@@ -1,7 +1,7 @@
 # Echopost Master Jira Tickets Registry
 
 * **Instance**: `https://echopost.atlassian.net`
-* **Last Synchronized**: `2026-10-11 11:30:22`
+* **Last Synchronized**: `2026-10-11 11:39:31`
 * **Sync Command**: `jira sync-map` (automatically updated on `create-issue`, `update-issue`, and `transition-issue`)
 
 ---
@@ -107,7 +107,7 @@
 | [EVD-74](https://echopost.atlassian.net/browse/EVD-74) | Task | **Done** | High | - | Argolis: LaunchAgent Guardrail Compliance Audit & Remediation (TCC, Internal SSD, ThrottleInterval, Python 3.14/3.15) |
 | [EVD-75](https://echopost.atlassian.net/browse/EVD-75) | Task | **Done** | Medium | EVD-76 | Waypoint PWA v2.4–v2.5: 3-Tier Daily Suggestion Accordions, Category Filter Toggles & Bundle Splitting |
 | [EVD-76](https://echopost.atlassian.net/browse/EVD-76) | Epic | **To Do** | Medium | - | Waypoint PWA: Architecture, UI & Code Quality Roadmap |
-| [EVD-77](https://echopost.atlassian.net/browse/EVD-77) | Bug | **To Do** | High | EVD-76 | Waypoint: Fix UTC vs. Local Timezone Shift When Parsing YYYY-MM-DD Dates |
+| [EVD-77](https://echopost.atlassian.net/browse/EVD-77) | Bug | **Done** | High | EVD-76 | Waypoint: Fix UTC vs. Local Timezone Shift When Parsing YYYY-MM-DD Dates |
 | [EVD-78](https://echopost.atlassian.net/browse/EVD-78) | Bug | **Done** | Medium | EVD-76 | Waypoint: Reset Timeline Category Filters & Auto-Scroll State When Switching Trips |
 | [EVD-79](https://echopost.atlassian.net/browse/EVD-79) | Task | **To Do** | Medium | EVD-76 | Waypoint: Align Level 1 Trip Summary Counts with Level 2 Booked vs. Suggestion Categories |
 | [EVD-80](https://echopost.atlassian.net/browse/EVD-80) | Task | **To Do** | Medium | EVD-76 | Waypoint: Refactor SyncModal Database Cleanup, Export Helper & Inline Status Feedback |

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { type Pass, db, type Attachment } from '../db';
 import { getPassTypeDisplayName, normalizePassType } from '../passTypes';
+import { formatLongDate } from '../dates';
 import { getSmartMapsUrl, getMapsServiceName } from '../maps';
 import { BarcodeRenderer } from './BarcodeRenderer';
 import { X, Maximize2, ShieldAlert, FileText, Download, Eye, MapPin, ExternalLink, Globe } from 'lucide-react';
@@ -104,18 +105,7 @@ export const PassDetailsModal: React.FC<PassDetailsModalProps> = ({
     return getPassTypeDisplayName(pass.type, pass.status);
   };
 
-  const formatDate = (dateStr: string) => {
-    try {
-      return new Date(dateStr).toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-    } catch {
-      return dateStr;
-    }
-  };
+  const formatDate = formatLongDate;
 
   const getModalStyle = () => {
     switch (normalizePassType(pass.type)) {
