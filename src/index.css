@@ -19,7 +19,7 @@ body {
   font-family: var(--font-sans);
   background-color: #0f172a; /* Slate 900 - dark theme by default */
   color: #f1f5f9; /* Slate 100 */
-  overflow-x: hidden;
+  overflow-x: clip;
   -webkit-tap-highlight-color: transparent;
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);

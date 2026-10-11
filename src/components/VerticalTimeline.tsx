@@ -18,9 +18,26 @@ import {
   ChevronDown,
 } from 'lucide-react';
 
+export type FilterCategory = 'flights' | 'hotels' | 'restaurants' | 'activities';
+
+export const DEFAULT_TIMELINE_FILTERS: Record<FilterCategory, boolean> = {
+  flights: true,
+  hotels: true,
+  restaurants: true,
+  activities: true,
+};
+
 interface VerticalTimelineProps {
   passes: Pass[];
   onSelectPass: (pass: Pass) => void;
+  activeFilters: Record<FilterCategory, boolean>;
+  onResetFilters: () => void;
+}
+
+interface TimelineFilterBarProps {
+  passes: Pass[];
+  activeFilters: Record<FilterCategory, boolean>;
+  onToggleFilter: (category: FilterCategory) => void;
 }
 
 type TimelineEntry =
@@ -37,8 +54,6 @@ type TimelineEntry =
       passes: Pass[];
       timestamp: number;
     };
-
-type FilterCategory = 'flights' | 'hotels' | 'restaurants' | 'activities';
 
 const FlightFilterIcon: React.FC<{ filled: boolean }> = ({ filled }) => (
   <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 transition-transform duration-200" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={filled ? 1.5 : 1.8} strokeLinecap="round" strokeLinejoin="round">
@@ -84,36 +99,11 @@ const ActivitiesFilterIcon: React.FC<{ filled: boolean }> = ({ filled }) => (
   </svg>
 );
 
-export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSelectPass }) => {
-  const itemRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-  const [expandedDays, setExpandedDays] = useState<Set<string>>(() => new Set());
-  const [activeFilters, setActiveFilters] = useState<Record<FilterCategory, boolean>>({
-    flights: true,
-    hotels: true,
-    restaurants: true,
-    activities: true,
-  });
-
-  const toggleFilter = (category: FilterCategory) => {
-    setActiveFilters((prev) => ({
-      ...prev,
-      [category]: !prev[category],
-    }));
-  };
-
-  const toggleDay = (date: string) => {
-    setExpandedDays((prev) => {
-      const next = new Set(prev);
-      if (next.has(date)) {
-        next.delete(date);
-      } else {
-        next.add(date);
-      }
-      return next;
-    });
-  };
-
-  // Count items per filter category
+export const TimelineFilterBar: React.FC<TimelineFilterBarProps> = ({
+  passes,
+  activeFilters,
+  onToggleFilter,
+}) => {
   const categoryCounts = useMemo(() => {
     const counts: Record<FilterCategory, number> = {
       flights: 0,
@@ -139,6 +129,125 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
     }
     return counts;
   }, [passes]);
+
+  return (
+    <div className="grid grid-cols-4 gap-2 w-full max-w-2xl mx-auto" role="group" aria-label="Filter timeline categories">
+      {/* 1. Flights Toggle */}
+      <button
+        type="button"
+        onClick={() => onToggleFilter('flights')}
+        aria-pressed={activeFilters.flights}
+        aria-label="Toggle Flights"
+        title="Flights & Transit"
+        className={`flex items-center justify-center gap-2 py-1.5 px-2.5 rounded-xl border text-xs font-bold transition-all duration-200 cursor-pointer active:scale-95 ${
+          activeFilters.flights
+            ? 'bg-gradient-to-r from-blue-700 via-sky-800 to-indigo-900 border-sky-400/50 text-white shadow-sm shadow-sky-950/50'
+            : 'bg-slate-950/50 border-sky-500/35 text-sky-400/70 hover:border-sky-400/60 hover:text-sky-300'
+        }`}
+      >
+        <FlightFilterIcon filled={activeFilters.flights} />
+        <span
+          className={`text-[11px] font-mono px-1.5 py-0.5 rounded-md font-extrabold leading-none ${
+            activeFilters.flights ? 'bg-white/15 text-sky-100' : 'bg-sky-500/10 text-sky-400/70'
+          }`}
+        >
+          {categoryCounts.flights}
+        </span>
+      </button>
+
+      {/* 2. Hotels Toggle */}
+      <button
+        type="button"
+        onClick={() => onToggleFilter('hotels')}
+        aria-pressed={activeFilters.hotels}
+        aria-label="Toggle Hotels"
+        title="Hotels & Stays"
+        className={`flex items-center justify-center gap-2 py-1.5 px-2.5 rounded-xl border text-xs font-bold transition-all duration-200 cursor-pointer active:scale-95 ${
+          activeFilters.hotels
+            ? 'bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-800 border-emerald-400/50 text-white shadow-sm shadow-emerald-950/50'
+            : 'bg-slate-950/50 border-emerald-500/35 text-emerald-400/70 hover:border-emerald-400/60 hover:text-emerald-300'
+        }`}
+      >
+        <HotelFilterIcon filled={activeFilters.hotels} />
+        <span
+          className={`text-[11px] font-mono px-1.5 py-0.5 rounded-md font-extrabold leading-none ${
+            activeFilters.hotels ? 'bg-white/15 text-emerald-100' : 'bg-emerald-500/10 text-emerald-400/70'
+          }`}
+        >
+          {categoryCounts.hotels}
+        </span>
+      </button>
+
+      {/* 3. Restaurant Bookings Toggle */}
+      <button
+        type="button"
+        onClick={() => onToggleFilter('restaurants')}
+        aria-pressed={activeFilters.restaurants}
+        aria-label="Toggle Restaurant Bookings"
+        title="Restaurant Bookings"
+        className={`flex items-center justify-center gap-2 py-1.5 px-2.5 rounded-xl border text-xs font-bold transition-all duration-200 cursor-pointer active:scale-95 ${
+          activeFilters.restaurants
+            ? 'bg-gradient-to-r from-rose-800 via-rose-900 to-red-950 border-rose-400/50 text-rose-100 shadow-sm shadow-rose-950/50'
+            : 'bg-slate-950/50 border-rose-500/35 text-rose-400/70 hover:border-rose-400/60 hover:text-rose-300'
+        }`}
+      >
+        <RestaurantFilterIcon filled={activeFilters.restaurants} />
+        <span
+          className={`text-[11px] font-mono px-1.5 py-0.5 rounded-md font-extrabold leading-none ${
+            activeFilters.restaurants ? 'bg-rose-500/25 text-rose-200' : 'bg-rose-500/10 text-rose-400/70'
+          }`}
+        >
+          {categoryCounts.restaurants}
+        </span>
+      </button>
+
+      {/* 4. Activities / Suggestions Toggle */}
+      <button
+        type="button"
+        onClick={() => onToggleFilter('activities')}
+        aria-pressed={activeFilters.activities}
+        aria-label="Toggle Activities & Suggestions"
+        title="Activities & Daily Suggestions"
+        className={`flex items-center justify-center gap-2 py-1.5 px-2.5 rounded-xl border text-xs font-bold transition-all duration-200 cursor-pointer active:scale-95 ${
+          activeFilters.activities
+            ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 border-amber-300/60 text-slate-950 shadow-sm shadow-amber-950/40'
+            : 'bg-slate-950/50 border-amber-500/35 text-amber-400/70 hover:border-amber-400/60 hover:text-amber-300'
+        }`}
+      >
+        <ActivitiesFilterIcon filled={activeFilters.activities} />
+        <span
+          className={`text-[11px] font-mono px-1.5 py-0.5 rounded-md font-extrabold leading-none ${
+            activeFilters.activities ? 'bg-black/15 text-slate-950' : 'bg-amber-500/10 text-amber-400/70'
+          }`}
+        >
+          {categoryCounts.activities}
+        </span>
+      </button>
+    </div>
+  );
+};
+
+export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({
+  passes,
+  onSelectPass,
+  activeFilters,
+  onResetFilters,
+}) => {
+  const itemRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const hasAutoScrolledRef = useRef(false);
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(() => new Set());
+
+  const toggleDay = (date: string) => {
+    setExpandedDays((prev) => {
+      const next = new Set(prev);
+      if (next.has(date)) {
+        next.delete(date);
+      } else {
+        next.add(date);
+      }
+      return next;
+    });
+  };
 
   // 1. Separate passes into Booked (Level 2) and Suggestions (Level 3)
   const timelineEntries = useMemo(() => {
@@ -222,9 +331,10 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
     return futureEntry ? futureEntry.key : filteredTimelineEntries[filteredTimelineEntries.length - 1]?.key;
   }, [filteredTimelineEntries]);
 
-  // 3. Scroll to the "Next Required Item" when the timeline is mounted
+  // 3. Scroll to the "Next Required Item" once when the timeline is mounted
   useEffect(() => {
-    if (nextRequiredKey) {
+    if (nextRequiredKey && !hasAutoScrolledRef.current) {
+      hasAutoScrolledRef.current = true;
       const timer = setTimeout(() => {
         const targetElement = itemRefs.current[nextRequiredKey];
         if (targetElement) {
@@ -348,105 +458,6 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
 
   return (
     <div className="space-y-6">
-      {/* CATEGORY FILTER TOGGLE BAR */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5" role="group" aria-label="Filter timeline categories">
-        {/* 1. Flights Toggle */}
-        <button
-          type="button"
-          onClick={() => toggleFilter('flights')}
-          aria-pressed={activeFilters.flights}
-          className={`flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl border text-xs font-bold tracking-wide transition-all duration-200 cursor-pointer active:scale-95 ${
-            activeFilters.flights
-              ? 'bg-gradient-to-r from-blue-700 via-sky-800 to-indigo-900 border-sky-400/50 text-white shadow-md shadow-sky-950/50'
-              : 'bg-slate-950/40 border-sky-500/35 text-sky-400/70 hover:border-sky-400/60 hover:text-sky-300'
-          }`}
-        >
-          <span className="flex items-center gap-2 truncate">
-            <FlightFilterIcon filled={activeFilters.flights} />
-            <span className="truncate">Flights</span>
-          </span>
-          <span
-            className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md font-extrabold ${
-              activeFilters.flights ? 'bg-white/15 text-sky-100' : 'bg-sky-500/10 text-sky-400/70'
-            }`}
-          >
-            {categoryCounts.flights}
-          </span>
-        </button>
-
-        {/* 2. Hotels Toggle */}
-        <button
-          type="button"
-          onClick={() => toggleFilter('hotels')}
-          aria-pressed={activeFilters.hotels}
-          className={`flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl border text-xs font-bold tracking-wide transition-all duration-200 cursor-pointer active:scale-95 ${
-            activeFilters.hotels
-              ? 'bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-800 border-emerald-400/50 text-white shadow-md shadow-emerald-950/50'
-              : 'bg-slate-950/40 border-emerald-500/35 text-emerald-400/70 hover:border-emerald-400/60 hover:text-emerald-300'
-          }`}
-        >
-          <span className="flex items-center gap-2 truncate">
-            <HotelFilterIcon filled={activeFilters.hotels} />
-            <span className="truncate">Hotels</span>
-          </span>
-          <span
-            className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md font-extrabold ${
-              activeFilters.hotels ? 'bg-white/15 text-emerald-100' : 'bg-emerald-500/10 text-emerald-400/70'
-            }`}
-          >
-            {categoryCounts.hotels}
-          </span>
-        </button>
-
-        {/* 3. Restaurant Bookings Toggle */}
-        <button
-          type="button"
-          onClick={() => toggleFilter('restaurants')}
-          aria-pressed={activeFilters.restaurants}
-          className={`flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl border text-xs font-bold tracking-wide transition-all duration-200 cursor-pointer active:scale-95 ${
-            activeFilters.restaurants
-              ? 'bg-gradient-to-r from-rose-800 via-rose-900 to-red-950 border-rose-400/50 text-rose-100 shadow-md shadow-rose-950/50'
-              : 'bg-slate-950/40 border-rose-500/35 text-rose-400/70 hover:border-rose-400/60 hover:text-rose-300'
-          }`}
-        >
-          <span className="flex items-center gap-2 truncate">
-            <RestaurantFilterIcon filled={activeFilters.restaurants} />
-            <span className="truncate">Dining</span>
-          </span>
-          <span
-            className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md font-extrabold ${
-              activeFilters.restaurants ? 'bg-rose-500/25 text-rose-200' : 'bg-rose-500/10 text-rose-400/70'
-            }`}
-          >
-            {categoryCounts.restaurants}
-          </span>
-        </button>
-
-        {/* 4. Activities / Suggestions Toggle */}
-        <button
-          type="button"
-          onClick={() => toggleFilter('activities')}
-          aria-pressed={activeFilters.activities}
-          className={`flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl border text-xs font-bold tracking-wide transition-all duration-200 cursor-pointer active:scale-95 ${
-            activeFilters.activities
-              ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 border-amber-300/60 text-slate-950 shadow-md shadow-amber-950/40'
-              : 'bg-slate-950/40 border-amber-500/35 text-amber-400/70 hover:border-amber-400/60 hover:text-amber-300'
-          }`}
-        >
-          <span className="flex items-center gap-2 truncate">
-            <ActivitiesFilterIcon filled={activeFilters.activities} />
-            <span className="truncate">Activities</span>
-          </span>
-          <span
-            className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md font-extrabold ${
-              activeFilters.activities ? 'bg-black/15 text-slate-950' : 'bg-amber-500/10 text-amber-400/70'
-            }`}
-          >
-            {categoryCounts.activities}
-          </span>
-        </button>
-      </div>
-
       {filteredTimelineEntries.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-10 border border-dashed border-white/10 rounded-3xl bg-slate-950/30 text-center">
           <p className="text-xs font-semibold text-slate-400">
@@ -454,14 +465,7 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
           </p>
           <button
             type="button"
-            onClick={() =>
-              setActiveFilters({
-                flights: true,
-                hotels: true,
-                restaurants: true,
-                activities: true,
-              })
-            }
+            onClick={onResetFilters}
             className="mt-3 px-3.5 py-1.5 rounded-xl bg-violet-600/20 border border-violet-500/30 text-violet-300 hover:bg-violet-600/30 text-xs font-bold transition cursor-pointer"
           >
             Show All Categories

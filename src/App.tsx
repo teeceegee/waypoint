@@ -2,7 +2,12 @@ import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Pass } from './db';
 import { TripSummaryCard } from './components/TripSummaryCard';
-import { VerticalTimeline } from './components/VerticalTimeline';
+import {
+  VerticalTimeline,
+  TimelineFilterBar,
+  DEFAULT_TIMELINE_FILTERS,
+  type FilterCategory,
+} from './components/VerticalTimeline';
 import { TravelerSelectionModal } from './components/TravelerSelectionModal';
 import { formatTravelerId, getTravelerIds, SHARED_TRAVELER_ID } from './travelers';
 import { APP_VERSION } from './version';
@@ -22,6 +27,20 @@ export default function App() {
     localStorage.getItem(SELECTED_TRAVELER_STORAGE_KEY)
   );
   const [selectedTripId, setSelectedTripId] = useState<number | null>(null);
+  const [activeFilters, setActiveFilters] = useState<Record<FilterCategory, boolean>>(
+    DEFAULT_TIMELINE_FILTERS
+  );
+
+  const toggleFilter = (category: FilterCategory) => {
+    setActiveFilters((prev) => ({
+      ...prev,
+      [category]: !prev[category],
+    }));
+  };
+
+  const resetFilters = () => {
+    setActiveFilters(DEFAULT_TIMELINE_FILTERS);
+  };
 
   // Modal control states
   const [selectedPass, setSelectedPass] = useState<Pass | null>(null);
@@ -101,74 +120,88 @@ export default function App() {
   };
 
   const currentSelectedTrip = trips.find(t => t.id === selectedTripId);
+  const currentTripPasses = currentSelectedTrip
+    ? getFilteredPassesForTrip(currentSelectedTrip.id!)
+    : [];
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-slate-950 pb-20 select-none">
 
-      {/* HEADER BAR */}
-      <header className="sticky top-0 z-30 glass border-b border-white/5 py-4 px-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {selectedTripId !== null && (
+      {/* HEADER BAR (Non-Scrollable Sticky Top Area) */}
+      <header className="sticky top-0 z-30 glass border-b border-white/5 py-3.5 px-4 sm:px-6 flex flex-col gap-3">
+        <div className="w-full max-w-2xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {selectedTripId !== null && (
+              <button
+                onClick={() => setSelectedTripId(null)}
+                className="p-2 mr-1 rounded-xl bg-slate-900 border border-white/5 text-slate-300 hover:text-white transition active:scale-95"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            )}
+            <div className="flex flex-col items-start">
+              <span className="text-xl font-black text-slate-100 uppercase tracking-tight">
+                Waypoint
+              </span>
+              <button
+                onClick={() => {
+                  if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations().then((registrations) => {
+                      for (const reg of registrations) {
+                        reg.update();
+                      }
+                    });
+                  }
+                  window.location.reload();
+                }}
+                title="Click to check for updates & reload"
+                className="text-[9px] text-slate-400 hover:text-slate-200 tracking-wider font-mono mt-0.5 text-left transition cursor-pointer"
+              >
+                SHARED TRAVEL WALLET v{APP_VERSION}
+              </button>
+            </div>
+          </div>
+
+          {/* Global Toolbar buttons */}
+          <div className="flex items-center gap-2">
+            {travelerIds.length > 0 && (
+              <select
+                value={selectedTravelerId || ''}
+                onChange={(event) => selectTraveler(event.target.value)}
+                aria-label="Choose traveller"
+                className="max-w-36 bg-slate-900 border border-white/10 text-slate-300 text-xs px-2.5 py-2 rounded-xl focus:outline-none focus:border-violet-500 font-bold tracking-wide cursor-pointer"
+              >
+                <option value="" disabled>Choose traveller</option>
+                {travelerIds.map((travelerId) => (
+                  <option key={travelerId} value={travelerId} className="bg-slate-900">
+                    {formatTravelerId(travelerId)}
+                  </option>
+                ))}
+              </select>
+            )}
+
             <button
-              onClick={() => setSelectedTripId(null)}
-              className="p-2 mr-1 rounded-xl bg-slate-900 border border-white/5 text-slate-300 hover:text-white transition active:scale-95"
+              onClick={() => setShowSyncModal(true)}
+              className="p-2.5 rounded-xl bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 transition"
+              title="Import/Export Backups"
             >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-          )}
-          <div className="flex flex-col items-start">
-            <span className="text-xl font-black text-slate-100 uppercase tracking-tight">
-              Waypoint
-            </span>
-            <button
-              onClick={() => {
-                if ('serviceWorker' in navigator) {
-                  navigator.serviceWorker.getRegistrations().then((registrations) => {
-                    for (const reg of registrations) {
-                      reg.update();
-                    }
-                  });
-                }
-                window.location.reload();
-              }}
-              title="Click to check for updates & reload"
-              className="text-[9px] text-slate-400 hover:text-slate-200 tracking-wider font-mono mt-0.5 text-left transition cursor-pointer"
-            >
-              SHARED TRAVEL WALLET v{APP_VERSION}
+              <Database className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Global Toolbar buttons */}
-        <div className="flex items-center gap-2">
-          {travelerIds.length > 0 && (
-            <select
-              value={selectedTravelerId || ''}
-              onChange={(event) => selectTraveler(event.target.value)}
-              aria-label="Choose traveller"
-              className="max-w-36 bg-slate-900 border border-white/10 text-slate-300 text-xs px-2.5 py-2 rounded-xl focus:outline-none focus:border-violet-500 font-bold tracking-wide cursor-pointer"
-            >
-              <option value="" disabled>Choose traveller</option>
-              {travelerIds.map((travelerId) => (
-                <option key={travelerId} value={travelerId} className="bg-slate-900">
-                  {formatTravelerId(travelerId)}
-                </option>
-              ))}
-            </select>
-          )}
-
-          <button
-            onClick={() => setShowSyncModal(true)}
-            className="p-2.5 rounded-xl bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 transition"
-            title="Import/Export Backups"
-          >
-            <Database className="w-4 h-4" />
-          </button>
-        </div>
+        {/* Sticky Category Filter Bar (Always visible when viewing a trip) */}
+        {selectedTripId !== null && currentSelectedTrip && (
+          <TimelineFilterBar
+            passes={currentTripPasses}
+            activeFilters={activeFilters}
+            onToggleFilter={toggleFilter}
+          />
+        )}
       </header>
 
       {/* MAIN VIEW CONTENT AREA */}
-      <main className="w-full max-w-2xl mx-auto px-4 mt-8 flex-1 flex flex-col gap-6">
+      <main className="w-full max-w-2xl mx-auto px-4 mt-6 flex-1 flex flex-col gap-6">
         
         {/* DRILL-DOWN: DETAILED VERTICAL TIMELINE VIEW */}
         {selectedTripId !== null && currentSelectedTrip ? (
@@ -192,8 +225,10 @@ export default function App() {
 
             {/* Vertical Timeline Component */}
             <VerticalTimeline
-              passes={getFilteredPassesForTrip(currentSelectedTrip.id!)}
+              passes={currentTripPasses}
               onSelectPass={(pass) => setSelectedPass(pass)}
+              activeFilters={activeFilters}
+              onResetFilters={resetFilters}
             />
           </div>
         ) : (
