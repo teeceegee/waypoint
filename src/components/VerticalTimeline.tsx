@@ -236,6 +236,12 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({
   const itemRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const hasAutoScrolledRef = useRef(false);
   const [expandedDays, setExpandedDays] = useState<Set<string>>(() => new Set());
+  const tripContextKey = passes[0]?.tripId ?? passes[0]?.tripSlug ?? null;
+
+  useEffect(() => {
+    hasAutoScrolledRef.current = false;
+    setExpandedDays(new Set());
+  }, [tripContextKey]);
 
   const toggleDay = (date: string) => {
     setExpandedDays((prev) => {

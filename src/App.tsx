@@ -42,6 +42,14 @@ export default function App() {
     setActiveFilters(DEFAULT_TIMELINE_FILTERS);
   };
 
+  const selectTrip = (tripId: number | null) => {
+    setSelectedTripId(tripId);
+    setActiveFilters(DEFAULT_TIMELINE_FILTERS);
+    if (tripId === null) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   // Modal control states
   const [selectedPass, setSelectedPass] = useState<Pass | null>(null);
   const [showSyncModal, setShowSyncModal] = useState(false);
@@ -79,12 +87,12 @@ export default function App() {
   const selectTraveler = (travelerId: string) => {
     localStorage.setItem(SELECTED_TRAVELER_STORAGE_KEY, travelerId);
     setSelectedTravelerId(travelerId);
-    setSelectedTripId(null);
+    selectTrip(null);
     setShowTravelerSelection(false);
   };
 
   const handleImportComplete = (importedTravelerIds: string[]) => {
-    setSelectedTripId(null);
+    selectTrip(null);
     if (importedTravelerIds.length > 0) {
       setTravelerSelectionOptions(importedTravelerIds);
       setShowTravelerSelection(true);
@@ -94,7 +102,7 @@ export default function App() {
   const handleDataCleared = () => {
     localStorage.removeItem(SELECTED_TRAVELER_STORAGE_KEY);
     setSelectedTravelerId(null);
-    setSelectedTripId(null);
+    selectTrip(null);
     setShowTravelerSelection(false);
   };
 
@@ -133,7 +141,7 @@ export default function App() {
           <div className="flex items-center gap-3">
             {selectedTripId !== null && (
               <button
-                onClick={() => setSelectedTripId(null)}
+                onClick={() => selectTrip(null)}
                 className="p-2 mr-1 rounded-xl bg-slate-900 border border-white/5 text-slate-300 hover:text-white transition active:scale-95"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -225,6 +233,7 @@ export default function App() {
 
             {/* Vertical Timeline Component */}
             <VerticalTimeline
+              key={currentSelectedTrip.id ?? currentSelectedTrip.slug}
               passes={currentTripPasses}
               onSelectPass={(pass) => setSelectedPass(pass)}
               activeFilters={activeFilters}
@@ -254,7 +263,7 @@ export default function App() {
                      key={trip.slug}
                      trip={trip}
                      passes={getFilteredPassesForTrip(trip.id!)}
-                     onClick={() => setSelectedTripId(trip.id!)}
+                     onClick={() => selectTrip(trip.id!)}
                   />
                 ))}
               </div>
