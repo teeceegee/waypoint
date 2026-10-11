@@ -3,7 +3,7 @@ import { type Pass, db, type Attachment } from '../db';
 import { getPassTypeDisplayName } from '../passTypes';
 import { getModalStyle } from '../passThemes';
 import { formatLongDate } from '../dates';
-import { getSmartMapsUrl, getMapsServiceName } from '../maps';
+import { getSmartMapsUrl, getMapsServiceName, getSafeWebsiteUrl } from '../maps';
 import { BarcodeRenderer } from './BarcodeRenderer';
 import { X, Maximize2, ShieldAlert, FileText, Download, Eye, MapPin, ExternalLink, Globe } from 'lucide-react';
 
@@ -282,18 +282,18 @@ export const PassDetailsModal: React.FC<PassDetailsModalProps> = ({
                 <span className={`text-xs font-semibold block ${modalStyle.valueText}`}>{pass.location}</span>
               </div>
 
-              {pass.website && (
+              {getSafeWebsiteUrl(pass.website) && (
                 <div className="col-span-2">
                   <span className={`text-[9px] uppercase block font-mono tracking-wider mb-1 ${modalStyle.labelText}`}>Official Website</span>
                   <a
-                    href={pass.website.startsWith('http') ? pass.website : `https://${pass.website}`}
+                    href={getSafeWebsiteUrl(pass.website)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold border transition ${modalStyle.btnClass} bg-black/10 border-white/10 max-w-full truncate`}
                     title={pass.website}
                   >
                     <Globe className="w-4 h-4 text-violet-400 flex-shrink-0" />
-                    <span className="truncate">{pass.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</span>
+                    <span className="truncate">{pass.website!.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</span>
                     <ExternalLink className="w-3.5 h-3.5 opacity-60 flex-shrink-0" />
                   </a>
                 </div>

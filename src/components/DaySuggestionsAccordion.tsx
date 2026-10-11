@@ -2,7 +2,7 @@ import React from 'react';
 import { type Pass } from '../db';
 import { normalizePassType } from '../passTypes';
 import { formatShortDate } from '../dates';
-import { getSmartMapsUrl, getMapsServiceName } from '../maps';
+import { getSmartMapsUrl, getMapsServiceName, getSafeWebsiteUrl } from '../maps';
 import {
   Ticket,
   Compass,
@@ -157,6 +157,8 @@ export const DaySuggestionsAccordion: React.FC<DaySuggestionsAccordionProps> = (
               {daySuggestions.map((pass) => {
                 const isDining = normalizePassType(pass.type) === 'restaurant';
                 const isActivity = normalizePassType(pass.type) === 'activity';
+                const mapsHref = getSmartMapsUrl(pass.mapsUrl, pass.location);
+                const websiteHref = getSafeWebsiteUrl(pass.website);
 
                 return (
                   <div
@@ -223,9 +225,9 @@ export const DaySuggestionsAccordion: React.FC<DaySuggestionsAccordionProps> = (
                       <div className="flex items-center gap-2 flex-wrap mt-1">
                         <span className="text-xs text-slate-300 font-medium">{pass.location}</span>
 
-                        {getSmartMapsUrl(pass.mapsUrl, pass.location) && (
+                        {mapsHref && (
                           <a
-                            href={getSmartMapsUrl(pass.mapsUrl, pass.location)}
+                            href={mapsHref}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
@@ -237,13 +239,9 @@ export const DaySuggestionsAccordion: React.FC<DaySuggestionsAccordionProps> = (
                           </a>
                         )}
 
-                        {pass.website && (
+                        {websiteHref && (
                           <a
-                            href={
-                              pass.website.startsWith('http')
-                                ? pass.website
-                                : `https://${pass.website}`
-                            }
+                            href={websiteHref}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}

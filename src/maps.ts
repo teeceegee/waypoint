@@ -1,5 +1,6 @@
 /**
- * Utility functions for OS-aware Apple Maps and Google Maps deep linking.
+ * Utility functions for OS-aware Apple Maps and Google Maps deep linking
+ * and safe external website URL normalization.
  */
 
 export const isApplePlatform = (): boolean => {
@@ -21,6 +22,35 @@ export const getMapsServiceName = (): string => {
   return isApplePlatform() ? 'Apple Maps' : 'Google Maps';
 };
 
+const isSafeMapsHref = (url: string): boolean => {
+  return /^(https?:\/\/|maps:)/i.test(url.trim());
+};
+
+/**
+ * Validates and normalizes an external website URL, allowing only http: and https: schemes.
+ * Returns an empty string if the URL is missing, malformed, or uses an unsafe scheme.
+ */
+export const getSafeWebsiteUrl = (website?: string): string => {
+  const trimmed = website?.trim();
+  if (!trimmed) return '';
+
+  // Reject explicit non-http(s) schemes such as javascript:, data:, vbscript:
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed) && !/^https?:\/\//i.test(trimmed)) {
+    return '';
+  }
+
+  const candidate = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  try {
+    const parsed = new URL(candidate);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return parsed.toString();
+    }
+    return '';
+  } catch {
+    return '';
+  }
+};
+
 /**
  * Returns a smart, OS-tailored maps URL.
  * Converts Apple Maps queries to Google Maps on Android/Windows,
@@ -31,12 +61,12 @@ export const getSmartMapsUrl = (mapsUrl?: string, location?: string): string => 
   const trimmedUrl = mapsUrl?.trim();
   const trimmedLocation = location?.trim();
 
-  if (trimmedUrl) {
+  if (trimmedUrl && isSafeMapsHref(trimmedUrl)) {
     // If running on Android / Windows / Linux, convert apple.com query links to Google Maps
-    if (!isApple && (trimmedUrl.includes('maps.apple.com') || trimmedUrl.startsWith('maps:'))) {
+    if (!isApple && (trimmedUrl.includes('maps.apple.com') || /^maps:/i.test(trimmedUrl))) {
       try {
-        const urlToParse = trimmedUrl.startsWith('maps:')
-          ? trimmedUrl.replace(/^maps:/, 'https://maps.apple.com')
+        const urlToParse = /^maps:/i.test(trimmedUrl)
+          ? trimmedUrl.replace(/^maps:/i, 'https://maps.apple.com')
           : trimmedUrl;
         const parsed = new URL(urlToParse);
         const query =

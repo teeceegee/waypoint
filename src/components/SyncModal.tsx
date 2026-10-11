@@ -25,6 +25,12 @@ export const SyncModal: React.FC<SyncModalProps> = ({
   const [importText, setImportText] = useState('');
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [statusTone, setStatusTone] = useState<'info' | 'success' | 'error'>('info');
+
+  const updateStatus = (message: string, tone: 'info' | 'success' | 'error' = 'info') => {
+    setStatus(message);
+    setStatusTone(tone);
+  };
 
   // Helper: Convert Blob to Base64 Data URL for JSON serialization
   const blobToBase64 = (blob: Blob): Promise<string> => {
@@ -49,39 +55,42 @@ export const SyncModal: React.FC<SyncModalProps> = ({
     return new Blob([u8arr], { type: mime });
   };
 
+  // Shared helper: Build full export bundle from IndexedDB (EVD-80)
+  const buildExportBundle = async () => {
+    const trips = await db.trips.toArray();
+    const passes = await db.passes.toArray();
+    const rawAttachments = await db.attachments.toArray();
+
+    updateStatus('Encoding attachments (this may take a few seconds)...', 'info');
+    const attachments = await Promise.all(
+      rawAttachments.map(async (att) => ({
+        id: att.id,
+        fileName: att.fileName,
+        fileType: att.fileType,
+        dataUrl: await blobToBase64(att.data),
+      }))
+    );
+
+    return {
+      app: 'waypoint',
+      version: 2,
+      exportedAt: new Date().toISOString(),
+      data: {
+        trips,
+        passes,
+        attachments,
+      },
+    };
+  };
+
   // Export database to JSON file
   const handleExport = async () => {
     setLoading(true);
-    setStatus('Preparing export bundle...');
+    updateStatus('Preparing export bundle...', 'info');
     try {
-      const trips = await db.trips.toArray();
-      const passes = await db.passes.toArray();
-      const rawAttachments = await db.attachments.toArray();
-
-      // Convert attachments blobs to base64
-      setStatus('Encoding attachments (this may take a few seconds)...');
-      const attachments = await Promise.all(
-        rawAttachments.map(async (att) => ({
-          id: att.id,
-          fileName: att.fileName,
-          fileType: att.fileType,
-          dataUrl: await blobToBase64(att.data),
-        }))
-      );
-
-      const exportBundle = {
-        app: 'waypoint',
-        version: 2,
-        exportedAt: new Date().toISOString(),
-        data: {
-          trips,
-          passes,
-          attachments,
-        },
-      };
-
+      const exportBundle = await buildExportBundle();
       const jsonStr = JSON.stringify(exportBundle, null, 2);
-      
+
       const blob = new Blob([jsonStr], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -91,11 +100,11 @@ export const SyncModal: React.FC<SyncModalProps> = ({
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      
-      setStatus('Backup downloaded successfully.');
+
+      updateStatus('Backup downloaded successfully.', 'success');
     } catch (err: any) {
       console.error('Export failed:', err);
-      setStatus(`Export failed: ${err.message}`);
+      updateStatus(`Export failed: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -104,34 +113,16 @@ export const SyncModal: React.FC<SyncModalProps> = ({
   // Copy JSON backup string to clipboard
   const handleCopyToClipboard = async () => {
     setLoading(true);
+    updateStatus('Preparing backup for clipboard...', 'info');
     try {
-      const trips = await db.trips.toArray();
-      const passes = await db.passes.toArray();
-      const rawAttachments = await db.attachments.toArray();
-
-      const attachments = await Promise.all(
-        rawAttachments.map(async (att) => ({
-          id: att.id,
-          fileName: att.fileName,
-          fileType: att.fileType,
-          dataUrl: await blobToBase64(att.data),
-        }))
-      );
-
-      const bundle = {
-        app: 'waypoint',
-        version: 2,
-        exportedAt: new Date().toISOString(),
-        data: { trips, passes, attachments },
-      };
-
+      const bundle = await buildExportBundle();
       await navigator.clipboard.writeText(JSON.stringify(bundle));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      setStatus('Backup copied to clipboard!');
+      updateStatus('Backup copied to clipboard!', 'success');
     } catch (err: any) {
       console.error('Copy failed:', err);
-      setStatus(`Copy failed: ${err.message}`);
+      updateStatus(`Copy failed: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -140,15 +131,15 @@ export const SyncModal: React.FC<SyncModalProps> = ({
   // Import full JSON backup data (Restore)
   const handleImport = async (jsonString: string) => {
     if (!jsonString.trim()) {
-      alert('Please paste a backup JSON string or upload a file.');
+      updateStatus('Please paste a backup JSON string or upload a file.', 'error');
       return;
     }
 
     setLoading(true);
-    setStatus('Parsing backup file...');
+    updateStatus('Parsing backup file...', 'info');
     try {
       const bundle = JSON.parse(jsonString);
-      
+
       if (bundle.app !== 'waypoint' || !bundle.data) {
         throw new Error('Invalid file format. This is not a Waypoint backup.');
       }
@@ -171,39 +162,42 @@ export const SyncModal: React.FC<SyncModalProps> = ({
       const importedTravelerIds = getTravelerIds(normalizedTrips, normalizedPasses);
       assertTravelerLimit(importedTravelerIds);
 
-      await db.transaction('rw', [db.trips, db.passes, db.profiles, db.attachments], async () => {
-        setStatus('Clearing current local database...');
-        await db.trips.clear();
-        await db.passes.clear();
-        await db.profiles.clear();
-        await db.attachments.clear();
+      await db.transaction(
+        'rw',
+        [db.trips, db.passes, db.profiles, db.attachments],
+        async () => {
+          updateStatus('Clearing current local database...', 'info');
+          await db.trips.clear();
+          await db.passes.clear();
+          await db.profiles.clear();
+          await db.attachments.clear();
 
-        setStatus('Restoring trips...');
-        if (profiles && Array.isArray(profiles)) {
-          await db.profiles.bulkAdd(profiles);
+          updateStatus('Restoring trips...', 'info');
+          if (profiles && Array.isArray(profiles)) {
+            await db.profiles.bulkAdd(profiles);
+          }
+          await db.trips.bulkAdd(normalizedTrips);
+          await db.passes.bulkAdd(normalizedPasses);
+
+          updateStatus('Restoring attachments (converting binary blobs)...', 'info');
+          if (attachments && Array.isArray(attachments)) {
+            const decodedAttachments: Attachment[] = attachments.map((att: any) => ({
+              id: att.id,
+              fileName: att.fileName,
+              fileType: att.fileType,
+              data: dataURLtoBlob(att.dataUrl),
+            }));
+            await db.attachments.bulkAdd(decodedAttachments);
+          }
         }
-        await db.trips.bulkAdd(normalizedTrips);
-        await db.passes.bulkAdd(normalizedPasses);
+      );
 
-        setStatus('Restoring attachments (converting binary blobs)...');
-        if (attachments && Array.isArray(attachments)) {
-          const decodedAttachments: Attachment[] = attachments.map((att: any) => ({
-            id: att.id,
-            fileName: att.fileName,
-            fileType: att.fileType,
-            data: dataURLtoBlob(att.dataUrl),
-          }));
-          await db.attachments.bulkAdd(decodedAttachments);
-        }
-      });
-
-      setStatus('Import completed successfully!');
-      alert('Backup restored successfully!');
+      updateStatus('Backup restored successfully!', 'success');
       onClose();
       onImportComplete(importedTravelerIds);
     } catch (err: any) {
       console.error('Import failed:', err);
-      setStatus(`Import failed: ${err.message}`);
+      updateStatus(`Import failed: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -211,7 +205,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({
 
   const handleLLMImport = async (jsonString: string) => {
     setLoading(true);
-    setStatus('Parsing sync updates...');
+    updateStatus('Parsing sync updates...', 'info');
     try {
       const payload = JSON.parse(jsonString);
 
@@ -263,7 +257,10 @@ export const SyncModal: React.FC<SyncModalProps> = ({
           if (trip.action === 'delete') {
             if (existingTrip) {
               await db.trips.delete(existingTrip.id!);
-              const passesToDelete = await db.passes.where('tripSlug').equals(trip.slug).toArray();
+              const passesToDelete = await db.passes
+                .where('tripSlug')
+                .equals(trip.slug)
+                .toArray();
               for (const p of passesToDelete) {
                 if (p.attachmentId) await db.attachments.delete(p.attachmentId);
                 await db.passes.delete(p.id!);
@@ -284,8 +281,15 @@ export const SyncModal: React.FC<SyncModalProps> = ({
               tripsUpserted++;
             } else {
               const { action: _action, ...newData } = trip;
-              if (!newData.name || !newData.destination || !newData.startDate || !newData.endDate) {
-                throw new Error(`Cannot add new trip with slug '${trip.slug}': Missing name, destination, startDate, or endDate.`);
+              if (
+                !newData.name ||
+                !newData.destination ||
+                !newData.startDate ||
+                !newData.endDate
+              ) {
+                throw new Error(
+                  `Cannot add new trip with slug '${trip.slug}': Missing name, destination, startDate, or endDate.`
+                );
               }
               await db.trips.add({
                 ...(newData as Trip),
@@ -321,7 +325,9 @@ export const SyncModal: React.FC<SyncModalProps> = ({
               if (matchedTrip) {
                 resolvedTripId = matchedTrip.id;
               } else {
-                throw new Error(`Cannot associate pass with slug '${pass.slug}': Trip with slug '${pass.tripSlug}' not found.`);
+                throw new Error(
+                  `Cannot associate pass with slug '${pass.slug}': Trip with slug '${pass.tripSlug}' not found.`
+                );
               }
             }
 
@@ -334,10 +340,12 @@ export const SyncModal: React.FC<SyncModalProps> = ({
                 attachmentId = await db.attachments.add({
                   fileName: pass.attachment.fileName,
                   fileType: pass.attachment.fileType,
-                  data: dataURLtoBlob(pass.attachment.dataUrl)
+                  data: dataURLtoBlob(pass.attachment.dataUrl),
                 });
               } catch (e: any) {
-                throw new Error(`Failed to import attachment for pass '${pass.slug}': ${e.message}`);
+                throw new Error(
+                  `Failed to import attachment for pass '${pass.slug}': ${e.message}`
+                );
               }
             }
 
@@ -360,22 +368,27 @@ export const SyncModal: React.FC<SyncModalProps> = ({
               passesUpserted++;
             } else {
               const { action: _action, attachment: _attachment, ...newData } = pass;
-              if (!newData.title || !newData.type || !newData.date || !newData.location || !newData.barcodeType) {
-                throw new Error(`Cannot add new pass with slug '${pass.slug}': Missing title, type, date, location, or barcodeType.`);
+              if (
+                !newData.title ||
+                !newData.type ||
+                !newData.date ||
+                !newData.location ||
+                !newData.barcodeType
+              ) {
+                throw new Error(
+                  `Cannot add new pass with slug '${pass.slug}': Missing title, type, date, location, or barcodeType.`
+                );
               }
-              if (!newData.tripSlug) {
-                throw new Error(`Cannot add new pass with slug '${pass.slug}': Missing tripSlug mapping.`);
-              }
-
-              const matchedTrip = await db.trips.where('slug').equals(newData.tripSlug).first();
-              if (!matchedTrip) {
-                throw new Error(`Cannot add new pass with slug '${pass.slug}': Target tripSlug '${newData.tripSlug}' not found.`);
+              if (!newData.tripSlug || resolvedTripId === undefined) {
+                throw new Error(
+                  `Cannot add new pass with slug '${pass.slug}': Missing tripSlug mapping.`
+                );
               }
 
               const passToAdd: Pass = {
                 ...(newData as Pass),
                 type: normalizePassType(newData.type),
-                tripId: matchedTrip.id,
+                tripId: resolvedTripId,
                 travelerId: newData.travelerId || SHARED_TRAVELER_ID,
               };
               if (attachmentId !== undefined) {
@@ -392,19 +405,18 @@ export const SyncModal: React.FC<SyncModalProps> = ({
         assertTravelerLimit(getTravelerIds(allTrips, allPasses));
       });
 
-      const message = `Sync succeeded! Applied: Trips (Upserted: ${tripsUpserted}, Deleted: ${tripsDeleted}), Passes (Upserted: ${passesUpserted}, Deleted: ${passesDeleted}).`;
-      setStatus(message);
-      alert(message);
+      const message = `Sync succeeded! Trips (Upserted: ${tripsUpserted}, Deleted: ${tripsDeleted}), Passes (Upserted: ${passesUpserted}, Deleted: ${passesDeleted}).`;
+      updateStatus(message, 'success');
       onClose();
       onImportComplete(importedTravelerIds);
     } catch (err: any) {
       console.error('Incremental Sync failed:', err);
-      setStatus(`Sync failed: ${err.message}`);
-      alert(`Sync failed: ${err.message}`);
+      updateStatus(`Sync failed: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
   };
+
   // Handle uploaded JSON backup file
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -435,23 +447,30 @@ export const SyncModal: React.FC<SyncModalProps> = ({
 
   // Wipe all local database tables (Factory Reset)
   const handleClearAllData = async () => {
-    if (window.confirm("WARNING: This will permanently delete all trips, boarding passes, and ticket files from this device. This cannot be undone. Are you sure?")) {
+    if (
+      window.confirm(
+        'WARNING: This will permanently delete all trips, boarding passes, and ticket files from this device. This cannot be undone. Are you sure?'
+      )
+    ) {
       setLoading(true);
-      setStatus("Wiping local database...");
+      updateStatus('Wiping local database...', 'info');
       try {
-        await db.transaction('rw', [db.trips, db.passes, db.attachments], async () => {
-          await db.trips.clear();
-          await db.passes.clear();
-          await db.attachments.clear();
-        });
-        setStatus("All data successfully cleared! Reloading page...");
-        alert("All local data has been deleted. The application will now reload.");
+        await db.transaction(
+          'rw',
+          [db.trips, db.passes, db.profiles, db.attachments],
+          async () => {
+            await db.trips.clear();
+            await db.passes.clear();
+            await db.profiles.clear();
+            await db.attachments.clear();
+          }
+        );
+        updateStatus('All local data cleared.', 'success');
         onDataCleared();
         onClose();
       } catch (err: any) {
-        console.error("Clear failed:", err);
-        setStatus(`Clear failed: ${err.message}`);
-        alert(`Clear failed: ${err.message}`);
+        console.error('Clear failed:', err);
+        updateStatus(`Clear failed: ${err.message}`, 'error');
       } finally {
         setLoading(false);
       }
@@ -459,7 +478,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({
   };
 
   const handleCheckUpdates = async () => {
-    setStatus('Checking for app updates...');
+    updateStatus('Checking for app updates...', 'info');
     if ('serviceWorker' in navigator) {
       try {
         const registration = await navigator.serviceWorker.getRegistration();
@@ -473,17 +492,25 @@ export const SyncModal: React.FC<SyncModalProps> = ({
     window.location.reload();
   };
 
+  const statusClasses =
+    statusTone === 'error'
+      ? 'bg-red-950/40 border-red-500/30 text-red-300'
+      : statusTone === 'success'
+      ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300'
+      : 'bg-violet-950/40 border-violet-500/20 text-violet-300';
+
   return (
     <div className="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
       <div className="absolute inset-0" onClick={onClose} />
 
       <div className="relative w-full sm:max-w-md bg-slate-900 rounded-t-3xl sm:rounded-3xl border border-white/10 shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh] overflow-hidden transform transition-all animate-in slide-in-from-bottom duration-300">
-        
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-white/5 bg-slate-950/40">
           <div>
             <h3 className="text-lg font-bold text-slate-100">Backup & Incremental Sync</h3>
-            <p className="text-[10px] text-slate-500 font-mono mt-0.5">Local-first Data Portability • v{APP_VERSION}</p>
+            <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+              Local-first Data Portability • v{APP_VERSION}
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -495,11 +522,12 @@ export const SyncModal: React.FC<SyncModalProps> = ({
 
         {/* Content */}
         <div className="p-6 space-y-6 overflow-y-auto flex-1">
-          
           {/* Status Bar */}
           {status && (
-            <div className="p-3 bg-violet-950/40 border border-violet-500/20 text-violet-300 text-xs rounded-xl text-center font-mono">
-              {loading && <RefreshCw className="w-3.5 h-3.5 animate-spin inline mr-2 text-violet-400" />}
+            <div className={`p-3 border text-xs rounded-xl text-center font-mono ${statusClasses}`}>
+              {loading && (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin inline mr-2 text-violet-400" />
+              )}
               {status}
             </div>
           )}
@@ -507,7 +535,10 @@ export const SyncModal: React.FC<SyncModalProps> = ({
           {/* App Version & Refresh */}
           <div className="flex items-center justify-between p-3 bg-slate-950/40 rounded-xl border border-white/5">
             <div>
-              <span className="text-[10px] font-mono text-slate-400 block">Installed Version: <strong className="text-slate-200 font-bold">v{APP_VERSION}</strong></span>
+              <span className="text-[10px] font-mono text-slate-400 block">
+                Installed Version:{' '}
+                <strong className="text-slate-200 font-bold">v{APP_VERSION}</strong>
+              </span>
             </div>
             <button
               onClick={handleCheckUpdates}
@@ -520,9 +551,12 @@ export const SyncModal: React.FC<SyncModalProps> = ({
 
           {/* Incremental JSON Import Section */}
           <div className="space-y-4">
-            <h4 className="text-xs uppercase font-extrabold tracking-wider text-slate-400 font-mono text-violet-400">Import Incremental Updates</h4>
+            <h4 className="text-xs uppercase font-extrabold tracking-wider font-mono text-violet-400">
+              Import Incremental Updates
+            </h4>
             <p className="text-xs text-slate-400 leading-normal">
-              Upload a `.json` file containing incremental changes. The engine will match slugs to create, modify, or delete trips and passes.
+              Upload a `.json` file containing incremental changes. The engine will match slugs to
+              create, modify, or delete trips and passes.
             </p>
 
             {/* File Upload Selector */}
@@ -546,11 +580,14 @@ export const SyncModal: React.FC<SyncModalProps> = ({
 
           {/* Export Actions */}
           <div className="space-y-3">
-            <h4 className="text-xs uppercase font-extrabold tracking-wider text-slate-400 font-mono">Export Backup</h4>
+            <h4 className="text-xs uppercase font-extrabold tracking-wider text-slate-400 font-mono">
+              Export Backup
+            </h4>
             <p className="text-xs text-slate-400 leading-normal">
-              Download your trips, boarding passes, and ticket files as a single JSON file. You can store it on iCloud, Google Drive, or transfer it to another device.
+              Download your trips, boarding passes, and ticket files as a single JSON file. You can
+              store it on iCloud, Google Drive, or transfer it to another device.
             </p>
-            
+
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={handleExport}
@@ -585,9 +622,12 @@ export const SyncModal: React.FC<SyncModalProps> = ({
 
           {/* Import Actions */}
           <div className="space-y-4">
-            <h4 className="text-xs uppercase font-extrabold tracking-wider text-slate-400 font-mono">Import Backup / Restore</h4>
+            <h4 className="text-xs uppercase font-extrabold tracking-wider text-slate-400 font-mono">
+              Import Backup / Restore
+            </h4>
             <p className="text-xs text-slate-400 leading-normal">
-              <span className="text-amber-400 font-semibold">Warning:</span> Restoring a backup will overwrite all current local data on this device.
+              <span className="text-amber-400 font-semibold">Warning:</span> Restoring a backup
+              will overwrite all current local data on this device.
             </p>
 
             {/* File Upload Selector */}
@@ -602,7 +642,9 @@ export const SyncModal: React.FC<SyncModalProps> = ({
               <div className="border border-dashed border-white/10 hover:border-violet-500/40 rounded-xl p-5 text-center flex flex-col items-center justify-center bg-slate-950/20 hover:bg-violet-600/5 transition">
                 <Upload className="w-6 h-6 text-slate-400 mb-2" />
                 <p className="text-xs font-semibold text-slate-300">Upload Backup JSON File</p>
-                <p className="text-[10px] text-slate-500 mt-1">Select a previously exported .json file</p>
+                <p className="text-[10px] text-slate-500 mt-1">
+                  Select a previously exported .json file
+                </p>
               </div>
             </div>
 
@@ -633,9 +675,12 @@ export const SyncModal: React.FC<SyncModalProps> = ({
 
           {/* Wipe Local Data */}
           <div className="space-y-3 pb-2">
-            <h4 className="text-xs uppercase font-extrabold tracking-wider text-red-400 font-mono">Danger Zone</h4>
+            <h4 className="text-xs uppercase font-extrabold tracking-wider text-red-400 font-mono">
+              Danger Zone
+            </h4>
             <p className="text-xs text-slate-400 leading-normal">
-              Delete all cached trips, passes, and attached documents from this device to start fresh.
+              Delete all cached trips, passes, and attached documents from this device to start
+              fresh.
             </p>
             <button
               onClick={handleClearAllData}
@@ -645,7 +690,6 @@ export const SyncModal: React.FC<SyncModalProps> = ({
               Wipe All Local Data
             </button>
           </div>
-
         </div>
       </div>
     </div>

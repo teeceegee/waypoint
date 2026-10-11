@@ -3,7 +3,7 @@ import { type Pass } from '../db';
 import { getPassTypeStubLabel, normalizePassType } from '../passTypes';
 import { getTicketStyle } from '../passThemes';
 import { formatShortDate } from '../dates';
-import { getSmartMapsUrl, getMapsServiceName } from '../maps';
+import { getSmartMapsUrl, getMapsServiceName, getSafeWebsiteUrl } from '../maps';
 import {
   Plane,
   Hotel,
@@ -53,6 +53,8 @@ export const BookedPassCard: React.FC<BookedPassCardProps> = ({
   cardRef,
 }) => {
   const style = getTicketStyle(pass.type, isNext, pass.status);
+  const mapsHref = getSmartMapsUrl(pass.mapsUrl, pass.location);
+  const websiteHref = getSafeWebsiteUrl(pass.website);
 
   return (
     <div
@@ -117,9 +119,9 @@ export const BookedPassCard: React.FC<BookedPassCardProps> = ({
               </h4>
               <div className="flex items-center gap-2 flex-wrap mt-0.5">
                 <p className={`text-xs font-medium ${style.textMuted}`}>{pass.location}</p>
-                {getSmartMapsUrl(pass.mapsUrl, pass.location) && (
+                {mapsHref && (
                   <a
-                    href={getSmartMapsUrl(pass.mapsUrl, pass.location)}
+                    href={mapsHref}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
@@ -130,11 +132,9 @@ export const BookedPassCard: React.FC<BookedPassCardProps> = ({
                     <span>Map</span>
                   </a>
                 )}
-                {pass.website && (
+                {websiteHref && (
                   <a
-                    href={
-                      pass.website.startsWith('http') ? pass.website : `https://${pass.website}`
-                    }
+                    href={websiteHref}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
