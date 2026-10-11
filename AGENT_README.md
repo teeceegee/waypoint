@@ -61,7 +61,8 @@ This document serves as the operational reference and codebase guide for AI agen
 * **Architecture History**: [From Idea to Installed App: Building a PWA with Codex in the ChatGPT Desktop App](https://echopost.atlassian.net/wiki/spaces/~71202051b19675b2e64a71ac2b1d79eb01b1f7/pages/524289) (ID: `524289`)
 
 ### Jira Issues
-* Tracked under **Everyday (`EVD`)** project for feature roadmaps and travel tooling.
+* Tracked under **Everyday (`EVD`)** project for feature roadmaps and travel tooling (see [`JIRA_TICKETS.md`](file:///Volumes/NeosDrive/08_Tech,%20Dev%20&%20AI/AI/Gemini/AntiGravity/waypoint/JIRA_TICKETS.md)):
+  * [EVD-75](https://echopost.atlassian.net/browse/EVD-75) — *Waypoint PWA v2.4–v2.5: 3-Tier Daily Suggestion Accordions, Category Filter Toggles & Bundle Splitting* (**Done**)
 
 ---
 
@@ -86,3 +87,6 @@ This document serves as the operational reference and codebase guide for AI agen
   * Implemented 3-tier navigation hierarchy on Level 2 timeline: preserved confirmed/booked items (flights, hotels, transit, confirmed bookings) on the primary timeline while consolidating daily dining recommendations and activity suggestions behind expandable day accordion summary cards (Level 3 drill-down).
   * Released v2.4.0 with Workbox `skipWaiting`, `clientsClaim`, and tap-to-update header mechanism for instant PWA version activation.
   * Released v2.4.1: Ensured planned/unbooked flights remain directly on the Level 2 master timeline alongside confirmed travel items, rendered in a distinct lighter sky-blue gradient (`from-sky-500 via-sky-600 to-blue-600`) with `✈️ Planned Flight` status labels to visually distinguish planned sectors from booked boarding passes.
+* **2026-10-11**:
+  * Released v2.5.0: Added interactive category filter toggle pills on the Level 2 Trip Timeline for **Flights**, **Hotels**, **Restaurant Bookings**, and **Activities / Suggestions**, using custom dual-state SVG icons (solid filled when selected, outlined stroke when unselected) colour-matched to each card category's gradient palette.
+  * Recorded and closed Jira ticket [EVD-75](https://echopost.atlassian.net/browse/EVD-75).

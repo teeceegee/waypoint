@@ -38,9 +38,68 @@ type TimelineEntry =
       timestamp: number;
     };
 
+type FilterCategory = 'flights' | 'hotels' | 'restaurants' | 'activities';
+
+const FlightFilterIcon: React.FC<{ filled: boolean }> = ({ filled }) => (
+  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 transition-transform duration-200" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={filled ? 1.5 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
+  </svg>
+);
+
+const HotelFilterIcon: React.FC<{ filled: boolean }> = ({ filled }) => (
+  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2 4v16" />
+    <path d="M2 8h18a2 2 0 0 1 2 2v10" />
+    <path d="M2 17h20" />
+    <path d="M6 8v9" />
+    <rect x="6" y="10" width="16" height="7" rx="1" fill={filled ? 'currentColor' : 'none'} stroke="none" />
+    <rect x="2" y="12" width="4" height="5" fill={filled ? 'currentColor' : 'none'} stroke="none" />
+  </svg>
+);
+
+const RestaurantFilterIcon: React.FC<{ filled: boolean }> = ({ filled }) => (
+  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    {filled ? (
+      <>
+        <path d="M3 2v7c0 1.7 1.3 3 3 3h1v10h2V12h1c1.7 0 3-1.3 3-3V2H3z" fill="currentColor" stroke="none" />
+        <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" fill="currentColor" />
+      </>
+    ) : (
+      <>
+        <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
+        <path d="M7 2v20" />
+        <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
+      </>
+    )}
+  </svg>
+);
+
+const ActivitiesFilterIcon: React.FC<{ filled: boolean }> = ({ filled }) => (
+  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 transition-transform duration-200" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={filled ? 1.5 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
+    <path d="M20 3v4" />
+    <path d="M22 5h-4" />
+    <path d="M4 17v2" />
+    <path d="M5 18H3" />
+  </svg>
+);
+
 export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSelectPass }) => {
   const itemRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const [expandedDays, setExpandedDays] = useState<Set<string>>(() => new Set());
+  const [activeFilters, setActiveFilters] = useState<Record<FilterCategory, boolean>>({
+    flights: true,
+    hotels: true,
+    restaurants: true,
+    activities: true,
+  });
+
+  const toggleFilter = (category: FilterCategory) => {
+    setActiveFilters((prev) => ({
+      ...prev,
+      [category]: !prev[category],
+    }));
+  };
 
   const toggleDay = (date: string) => {
     setExpandedDays((prev) => {
@@ -53,6 +112,33 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
       return next;
     });
   };
+
+  // Count items per filter category
+  const categoryCounts = useMemo(() => {
+    const counts: Record<FilterCategory, number> = {
+      flights: 0,
+      hotels: 0,
+      restaurants: 0,
+      activities: 0,
+    };
+    for (const pass of passes) {
+      if (isBookedPass(pass)) {
+        const normType = normalizePassType(pass.type);
+        if (normType === 'flight' || normType === 'train' || normType === 'bus') {
+          counts.flights++;
+        } else if (normType === 'hotel') {
+          counts.hotels++;
+        } else if (normType === 'restaurant') {
+          counts.restaurants++;
+        } else {
+          counts.activities++;
+        }
+      } else {
+        counts.activities++;
+      }
+    }
+    return counts;
+  }, [passes]);
 
   // 1. Separate passes into Booked (Level 2) and Suggestions (Level 3)
   const timelineEntries = useMemo(() => {
@@ -97,12 +183,32 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
     return [...bookedEntries, ...suggestionEntries].sort((a, b) => a.timestamp - b.timestamp);
   }, [passes]);
 
+  // Apply category toggle filters
+  const filteredTimelineEntries = useMemo(() => {
+    return timelineEntries.filter((entry) => {
+      if (entry.kind === 'day_suggestions') {
+        return activeFilters.activities;
+      }
+      const normType = normalizePassType(entry.pass.type);
+      if (normType === 'flight' || normType === 'train' || normType === 'bus') {
+        return activeFilters.flights;
+      }
+      if (normType === 'hotel') {
+        return activeFilters.hotels;
+      }
+      if (normType === 'restaurant') {
+        return activeFilters.restaurants;
+      }
+      return activeFilters.activities;
+    });
+  }, [timelineEntries, activeFilters]);
+
   // 2. Identify the "Next Required Item" (first future/ongoing event)
   const nextRequiredKey = useMemo(() => {
-    if (timelineEntries.length === 0) return null;
+    if (filteredTimelineEntries.length === 0) return null;
     const now = new Date().getTime();
 
-    const futureEntry = timelineEntries.find((entry) => {
+    const futureEntry = filteredTimelineEntries.find((entry) => {
       if (entry.kind === 'booked') {
         const duration = entry.pass.type === 'hotel' ? 86400000 : 10800000; // 24h for hotel, 3h for others
         return entry.timestamp + duration >= now;
@@ -113,8 +219,8 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
       }
     });
 
-    return futureEntry ? futureEntry.key : timelineEntries[timelineEntries.length - 1]?.key;
-  }, [timelineEntries]);
+    return futureEntry ? futureEntry.key : filteredTimelineEntries[filteredTimelineEntries.length - 1]?.key;
+  }, [filteredTimelineEntries]);
 
   // 3. Scroll to the "Next Required Item" when the timeline is mounted
   useEffect(() => {
@@ -241,8 +347,129 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
   };
 
   return (
-    <div className="relative pl-6 sm:pl-8 border-l border-white/10 space-y-8 my-4">
-      {timelineEntries.map((entry) => {
+    <div className="space-y-6">
+      {/* CATEGORY FILTER TOGGLE BAR */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5" role="group" aria-label="Filter timeline categories">
+        {/* 1. Flights Toggle */}
+        <button
+          type="button"
+          onClick={() => toggleFilter('flights')}
+          aria-pressed={activeFilters.flights}
+          className={`flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl border text-xs font-bold tracking-wide transition-all duration-200 cursor-pointer active:scale-95 ${
+            activeFilters.flights
+              ? 'bg-gradient-to-r from-blue-700 via-sky-800 to-indigo-900 border-sky-400/50 text-white shadow-md shadow-sky-950/50'
+              : 'bg-slate-950/40 border-sky-500/35 text-sky-400/70 hover:border-sky-400/60 hover:text-sky-300'
+          }`}
+        >
+          <span className="flex items-center gap-2 truncate">
+            <FlightFilterIcon filled={activeFilters.flights} />
+            <span className="truncate">Flights</span>
+          </span>
+          <span
+            className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md font-extrabold ${
+              activeFilters.flights ? 'bg-white/15 text-sky-100' : 'bg-sky-500/10 text-sky-400/70'
+            }`}
+          >
+            {categoryCounts.flights}
+          </span>
+        </button>
+
+        {/* 2. Hotels Toggle */}
+        <button
+          type="button"
+          onClick={() => toggleFilter('hotels')}
+          aria-pressed={activeFilters.hotels}
+          className={`flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl border text-xs font-bold tracking-wide transition-all duration-200 cursor-pointer active:scale-95 ${
+            activeFilters.hotels
+              ? 'bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-800 border-emerald-400/50 text-white shadow-md shadow-emerald-950/50'
+              : 'bg-slate-950/40 border-emerald-500/35 text-emerald-400/70 hover:border-emerald-400/60 hover:text-emerald-300'
+          }`}
+        >
+          <span className="flex items-center gap-2 truncate">
+            <HotelFilterIcon filled={activeFilters.hotels} />
+            <span className="truncate">Hotels</span>
+          </span>
+          <span
+            className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md font-extrabold ${
+              activeFilters.hotels ? 'bg-white/15 text-emerald-100' : 'bg-emerald-500/10 text-emerald-400/70'
+            }`}
+          >
+            {categoryCounts.hotels}
+          </span>
+        </button>
+
+        {/* 3. Restaurant Bookings Toggle */}
+        <button
+          type="button"
+          onClick={() => toggleFilter('restaurants')}
+          aria-pressed={activeFilters.restaurants}
+          className={`flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl border text-xs font-bold tracking-wide transition-all duration-200 cursor-pointer active:scale-95 ${
+            activeFilters.restaurants
+              ? 'bg-gradient-to-r from-rose-800 via-rose-900 to-red-950 border-rose-400/50 text-rose-100 shadow-md shadow-rose-950/50'
+              : 'bg-slate-950/40 border-rose-500/35 text-rose-400/70 hover:border-rose-400/60 hover:text-rose-300'
+          }`}
+        >
+          <span className="flex items-center gap-2 truncate">
+            <RestaurantFilterIcon filled={activeFilters.restaurants} />
+            <span className="truncate">Dining</span>
+          </span>
+          <span
+            className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md font-extrabold ${
+              activeFilters.restaurants ? 'bg-rose-500/25 text-rose-200' : 'bg-rose-500/10 text-rose-400/70'
+            }`}
+          >
+            {categoryCounts.restaurants}
+          </span>
+        </button>
+
+        {/* 4. Activities / Suggestions Toggle */}
+        <button
+          type="button"
+          onClick={() => toggleFilter('activities')}
+          aria-pressed={activeFilters.activities}
+          className={`flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl border text-xs font-bold tracking-wide transition-all duration-200 cursor-pointer active:scale-95 ${
+            activeFilters.activities
+              ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 border-amber-300/60 text-slate-950 shadow-md shadow-amber-950/40'
+              : 'bg-slate-950/40 border-amber-500/35 text-amber-400/70 hover:border-amber-400/60 hover:text-amber-300'
+          }`}
+        >
+          <span className="flex items-center gap-2 truncate">
+            <ActivitiesFilterIcon filled={activeFilters.activities} />
+            <span className="truncate">Activities</span>
+          </span>
+          <span
+            className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md font-extrabold ${
+              activeFilters.activities ? 'bg-black/15 text-slate-950' : 'bg-amber-500/10 text-amber-400/70'
+            }`}
+          >
+            {categoryCounts.activities}
+          </span>
+        </button>
+      </div>
+
+      {filteredTimelineEntries.length === 0 ? (
+        <div className="flex flex-col items-center justify-center p-10 border border-dashed border-white/10 rounded-3xl bg-slate-950/30 text-center">
+          <p className="text-xs font-semibold text-slate-400">
+            No timeline items match the selected category filters.
+          </p>
+          <button
+            type="button"
+            onClick={() =>
+              setActiveFilters({
+                flights: true,
+                hotels: true,
+                restaurants: true,
+                activities: true,
+              })
+            }
+            className="mt-3 px-3.5 py-1.5 rounded-xl bg-violet-600/20 border border-violet-500/30 text-violet-300 hover:bg-violet-600/30 text-xs font-bold transition cursor-pointer"
+          >
+            Show All Categories
+          </button>
+        </div>
+      ) : (
+        <div className="relative pl-6 sm:pl-8 border-l border-white/10 space-y-8 my-4">
+          {filteredTimelineEntries.map((entry) => {
         const isNext = entry.key === nextRequiredKey;
 
         // ==========================================
@@ -625,6 +852,8 @@ export const VerticalTimeline: React.FC<VerticalTimelineProps> = ({ passes, onSe
           </div>
         );
       })}
+        </div>
+      )}
     </div>
   );
 };
