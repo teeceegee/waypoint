@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { type Pass, db, type Attachment } from '../db';
-import { getPassTypeDisplayName, normalizePassType } from '../passTypes';
+import { getPassTypeDisplayName } from '../passTypes';
+import { getModalStyle } from '../passThemes';
 import { formatLongDate } from '../dates';
 import { getSmartMapsUrl, getMapsServiceName } from '../maps';
 import { BarcodeRenderer } from './BarcodeRenderer';
@@ -106,112 +107,7 @@ export const PassDetailsModal: React.FC<PassDetailsModalProps> = ({
   };
 
   const formatDate = formatLongDate;
-
-  const getModalStyle = () => {
-    switch (normalizePassType(pass.type)) {
-      case 'flight':
-        if (pass.status === 'recommended' || pass.status === 'planned') {
-          return {
-            containerBg: 'bg-gradient-to-br from-sky-500 via-sky-600 to-blue-600 text-white border-sky-300/40 shadow-2xl',
-            headerBg: 'border-b border-white/15 bg-black/10',
-            titleText: 'text-white font-black',
-            subtitleText: 'text-sky-100 font-medium',
-            labelText: 'text-sky-100/80',
-            valueText: 'text-white',
-            cardBg: 'bg-black/15 border border-white/10',
-            btnClass: 'text-white/80 hover:text-white hover:bg-white/10',
-            deleteBtnClass: 'text-red-200 hover:text-white hover:bg-red-500/20'
-          };
-        }
-        return {
-          containerBg: 'bg-gradient-to-br from-blue-700 via-sky-850 to-indigo-900 text-white border-sky-400/30',
-          headerBg: 'border-b border-white/10 bg-black/10',
-          titleText: 'text-white',
-          subtitleText: 'text-sky-200 opacity-80',
-          labelText: 'text-sky-200/70',
-          valueText: 'text-white',
-          cardBg: 'bg-black/15 border border-white/5',
-          btnClass: 'text-white/70 hover:text-white hover:bg-white/10',
-          deleteBtnClass: 'text-red-300 hover:text-red-200 hover:bg-red-500/20'
-        };
-      case 'train':
-      case 'bus':
-        return {
-          containerBg: 'bg-gradient-to-br from-amber-500 via-amber-400 to-orange-500 text-slate-950 border-amber-300/30',
-          headerBg: 'border-b border-black/10 bg-black/5',
-          titleText: 'text-slate-950 font-black',
-          subtitleText: 'text-slate-800 font-bold',
-          labelText: 'text-slate-800/80 font-bold',
-          valueText: 'text-slate-950 font-extrabold',
-          cardBg: 'bg-black/5 border border-black/5',
-          btnClass: 'text-slate-950/70 hover:text-slate-950 hover:bg-black/10',
-          deleteBtnClass: 'text-red-800 hover:text-red-900 hover:bg-red-500/20'
-        };
-      case 'hotel':
-        return {
-          containerBg: 'bg-gradient-to-br from-emerald-600 via-emerald-750 to-teal-850 text-white border-emerald-450/30 border-l-4 border-l-emerald-500',
-          headerBg: 'border-b border-white/10 bg-black/10',
-          titleText: 'text-white font-extrabold',
-          subtitleText: 'text-emerald-100 font-bold',
-          labelText: 'text-emerald-100/70',
-          valueText: 'text-white',
-          cardBg: 'bg-black/15 border border-white/5',
-          btnClass: 'text-white/70 hover:text-white hover:bg-white/10',
-          deleteBtnClass: 'text-red-300 hover:text-red-200 hover:bg-red-500/20'
-        };
-      case 'restaurant':
-        if (pass.status === 'recommended') {
-          return {
-            containerBg: 'bg-gradient-to-br from-rose-700 via-rose-600 to-amber-700 text-white border-rose-400/30 shadow-2xl',
-            headerBg: 'border-b border-white/10 bg-black/10',
-            titleText: 'text-white font-extrabold',
-            subtitleText: 'text-rose-100 font-bold',
-            labelText: 'text-rose-100/80 font-semibold',
-            valueText: 'text-white font-bold',
-            cardBg: 'bg-black/15 border border-white/10',
-            btnClass: 'text-white/80 hover:text-white hover:bg-white/10',
-            deleteBtnClass: 'text-red-200 hover:text-white hover:bg-red-500/20'
-          };
-        }
-        return {
-          containerBg: 'bg-gradient-to-br from-rose-900 via-rose-950 to-red-950 text-white border-rose-500/20',
-          headerBg: 'border-b border-white/10 bg-black/10',
-          titleText: 'text-white font-bold',
-          subtitleText: 'text-rose-200',
-          labelText: 'text-rose-200/70',
-          valueText: 'text-white',
-          cardBg: 'bg-black/15 border border-white/5',
-          btnClass: 'text-white/70 hover:text-white hover:bg-white/10',
-          deleteBtnClass: 'text-red-300 hover:text-red-200 hover:bg-red-500/20'
-        };
-      case 'activity':
-        return {
-          containerBg: 'bg-gradient-to-br from-white via-slate-50 to-slate-100 text-slate-950 border-white/60 shadow-2xl',
-          headerBg: 'border-b border-black/10 bg-black/5',
-          titleText: 'text-slate-950 font-black',
-          subtitleText: 'text-slate-700 font-bold',
-          labelText: 'text-slate-600/90 font-bold',
-          valueText: 'text-slate-950 font-extrabold',
-          cardBg: 'bg-black/5 border border-black/10',
-          btnClass: 'text-slate-900 hover:text-black hover:bg-black/10',
-          deleteBtnClass: 'text-red-700 hover:text-red-900 hover:bg-red-500/20'
-        };
-      default:
-        return {
-          containerBg: 'bg-gradient-to-br from-slate-800 to-slate-900 text-white border-white/10',
-          headerBg: 'border-b border-white/10 bg-black/10',
-          titleText: 'text-white',
-          subtitleText: 'text-slate-300',
-          labelText: 'text-slate-400',
-          valueText: 'text-slate-100',
-          cardBg: 'bg-black/15 border border-white/5',
-          btnClass: 'text-slate-300 hover:text-white hover:bg-white/5',
-          deleteBtnClass: 'text-red-400 hover:text-red-300 hover:bg-red-500/10'
-        };
-    }
-  };
-
-  const modalStyle = getModalStyle();
+  const modalStyle = getModalStyle(pass.type, pass.status);
 
   return (
     <>

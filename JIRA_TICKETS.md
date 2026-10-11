@@ -1,7 +1,7 @@
 # Echopost Master Jira Tickets Registry
 
 * **Instance**: `https://echopost.atlassian.net`
-* **Last Synchronized**: `2026-10-11 11:39:31`
+* **Last Synchronized**: `2026-10-11 11:45:54`
 * **Sync Command**: `jira sync-map` (automatically updated on `create-issue`, `update-issue`, and `transition-issue`)
 
 ---
@@ -111,5 +111,5 @@
 | [EVD-78](https://echopost.atlassian.net/browse/EVD-78) | Bug | **Done** | Medium | EVD-76 | Waypoint: Reset Timeline Category Filters & Auto-Scroll State When Switching Trips |
 | [EVD-79](https://echopost.atlassian.net/browse/EVD-79) | Task | **To Do** | Medium | EVD-76 | Waypoint: Align Level 1 Trip Summary Counts with Level 2 Booked vs. Suggestion Categories |
 | [EVD-80](https://echopost.atlassian.net/browse/EVD-80) | Task | **To Do** | Medium | EVD-76 | Waypoint: Refactor SyncModal Database Cleanup, Export Helper & Inline Status Feedback |
-| [EVD-81](https://echopost.atlassian.net/browse/EVD-81) | Task | **To Do** | Medium | EVD-76 | Waypoint: Modularize VerticalTimeline.tsx & Centralize Pass Card/Modal Theme Tokens |
+| [EVD-81](https://echopost.atlassian.net/browse/EVD-81) | Task | **Done** | Medium | EVD-76 | Waypoint: Modularize VerticalTimeline.tsx & Centralize Pass Card/Modal Theme Tokens |
 | [EVD-82](https://echopost.atlassian.net/browse/EVD-82) | Task | **To Do** | Low | EVD-76 | Waypoint: Sanitize External URL Schemes in Maps & Website Links |
